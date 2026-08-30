@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Optional, Union
 import json
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024  # 10 MB limit
     ALLOWED_EXTENSIONS: List[str] = ["pdf"]
     ALLOWED_MIME_TYPES: List[str] = ["application/pdf"]
+
+    # OCR Fallback Configuration (Task 2B)
+    TESSERACT_CMD: Optional[str] = None
+    OCR_MIN_TEXT_THRESHOLD: int = 15  # Minimum character count to classify as digital text
+    OCR_DPI: int = 200  # Resolution for rendering scanned PDF pages to in-memory images
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -123,8 +123,10 @@ export default function DocumentUploadCard() {
             className={`badge ${
               result.status === "processed"
                 ? "badge-success"
-                : result.status === "no_text_detected"
+                : result.status === "ocr_processed"
                 ? "badge-sih"
+                : result.status === "no_text_detected"
+                ? "badge-danger"
                 : "badge-danger"
             }`}
           >
@@ -132,13 +134,17 @@ export default function DocumentUploadCard() {
               className={`status-dot ${
                 result.status === "processed"
                   ? "status-dot-green"
+                  : result.status === "ocr_processed"
+                  ? "status-dot-green"
                   : "status-dot-amber"
               }`}
             />
             {result.status === "processed"
-              ? "Status: Processed"
+              ? "Status: Processed (Digital)"
+              : result.status === "ocr_processed"
+              ? "Status: OCR Processed"
               : result.status === "no_text_detected"
-              ? "No Digital Text (Scanned)"
+              ? "No Text Detected"
               : "Status: Failed"}
           </span>
         )}
@@ -339,28 +345,61 @@ export default function DocumentUploadCard() {
                       }}
                     >
                       Page {p.page_number}
+                      {p.extraction_method === "ocr" && " (OCR)"}
                       {!p.has_text && " (Empty)"}
                     </button>
                   ))}
                 </div>
 
-                {currentPageEvidence?.text && (
-                  <button
-                    onClick={() => copyPageText(currentPageEvidence.text)}
-                    className="btn btn-outline"
-                    style={{ padding: "0.35rem 0.65rem", fontSize: "0.78rem" }}
-                  >
-                    {copied ? (
-                      <>
-                        <CheckCircle2 size={13} color="var(--accent-green)" /> Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={13} /> Copy Page Text
-                      </>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  {currentPageEvidence?.extraction_method && (
+                    <span
+                      className={`badge ${
+                        currentPageEvidence.extraction_method === "digital"
+                          ? "badge-success"
+                          : currentPageEvidence.extraction_method === "ocr"
+                          ? "badge-sih"
+                          : "badge-neutral"
+                      }`}
+                      style={{ fontSize: "0.72rem", padding: "0.25rem 0.55rem" }}
+                    >
+                      Method:{" "}
+                      {currentPageEvidence.extraction_method === "digital"
+                        ? "Digital Text"
+                        : currentPageEvidence.extraction_method === "ocr"
+                        ? "OCR Fallback"
+                        : "OCR Unavailable"}
+                    </span>
+                  )}
+
+                  {currentPageEvidence?.ocr_confidence !== null &&
+                    currentPageEvidence?.ocr_confidence !== undefined && (
+                      <span
+                        className="badge badge-sih"
+                        style={{ fontSize: "0.72rem", padding: "0.25rem 0.55rem" }}
+                      >
+                        Confidence: {currentPageEvidence.ocr_confidence}%
+                      </span>
                     )}
-                  </button>
-                )}
+
+                  {currentPageEvidence?.text && (
+                    <button
+                      onClick={() => copyPageText(currentPageEvidence.text)}
+                      className="btn btn-outline"
+                      style={{ padding: "0.35rem 0.65rem", fontSize: "0.78rem" }}
+                    >
+                      {copied ? (
+                        <>
+                          <CheckCircle2 size={13} color="var(--accent-green)" /> Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={13} /> Copy Page Text
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Page Content Display Box */}
@@ -392,9 +431,9 @@ export default function DocumentUploadCard() {
                       }}
                     >
                       <FileCheck size={28} style={{ marginBottom: "0.5rem", opacity: 0.5 }} />
-                      <p>No digital text found on Page {selectedPage}.</p>
+                      <p>No extractable digital or OCR text found on Page {selectedPage}.</p>
                       <p style={{ fontSize: "0.75rem", marginTop: "0.25rem" }}>
-                        (This page contains images or scanned drawings. OCR module will process this in Task 2B.)
+                        (Page is either blank, non-text, or OCR binary is not configured.)
                       </p>
                     </div>
                   )
@@ -416,8 +455,14 @@ export default function DocumentUploadCard() {
                 >
                   <span>
                     Viewing Evidence: Page {selectedPage} of {result.page_count}
+                    {currentPageEvidence.extraction_method && ` • ${currentPageEvidence.extraction_method.toUpperCase()}`}
                   </span>
-                  <span>{currentPageEvidence.character_count} Characters Extracted</span>
+                  <span>
+                    {currentPageEvidence.character_count} Characters Extracted
+                    {currentPageEvidence.ocr_confidence !== null &&
+                      currentPageEvidence.ocr_confidence !== undefined &&
+                      ` (Confidence: ${currentPageEvidence.ocr_confidence}%)`}
+                  </span>
                 </div>
               )}
             </div>

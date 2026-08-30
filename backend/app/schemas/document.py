@@ -4,9 +4,17 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
+class ExtractionMethod(str, Enum):
+    """Method utilized for extracting text from a document page."""
+    DIGITAL = "digital"
+    OCR = "ocr"
+    OCR_UNAVAILABLE = "ocr_unavailable"
+
+
 class DocumentProcessingStatus(str, Enum):
     """Enumeration of document processing states."""
     PROCESSED = "processed"
+    OCR_PROCESSED = "ocr_processed"
     NO_TEXT_DETECTED = "no_text_detected"
     FAILED = "failed"
 
@@ -17,6 +25,14 @@ class PageTextEvidence(BaseModel):
     text: str = Field(default="", description="Extracted plain text content from this page")
     character_count: int = Field(default=0, description="Total characters extracted on this page")
     has_text: bool = Field(default=False, description="True if non-whitespace text was extracted")
+    extraction_method: ExtractionMethod = Field(
+        default=ExtractionMethod.DIGITAL,
+        description="Mechanism used to extract page text ('digital', 'ocr', 'ocr_unavailable')",
+    )
+    ocr_confidence: Optional[float] = Field(
+        default=None,
+        description="Average OCR confidence score (0.0 to 100.0%) if extracted via OCR",
+    )
 
 
 class DocumentUploadResponse(BaseModel):

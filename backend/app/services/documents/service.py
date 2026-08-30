@@ -7,7 +7,7 @@ from fastapi import HTTPException, UploadFile, status
 from app.core.config import settings
 from app.schemas.document import DocumentUploadResponse
 from app.services.documents.base import BaseDocumentProcessor
-from app.services.documents.pdf_processor import PyMuPDFProcessor
+from app.services.documents.hybrid_processor import HybridDocumentProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ class DocumentService:
     """Service coordinating document uploads, validation, temporary storage, and extraction."""
 
     def __init__(self, processor: BaseDocumentProcessor = None):
-        self.processor = processor or PyMuPDFProcessor()
+        self.processor = processor or HybridDocumentProcessor()
 
     async def process_uploaded_file(self, file: UploadFile) -> DocumentUploadResponse:
         """

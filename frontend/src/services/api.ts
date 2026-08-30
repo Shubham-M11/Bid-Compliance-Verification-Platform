@@ -11,13 +11,21 @@ export interface HealthResponse {
   timestamp: string;
 }
 
-export type DocumentProcessingStatus = "processed" | "no_text_detected" | "failed";
+export type ExtractionMethod = "digital" | "ocr" | "ocr_unavailable";
+
+export type DocumentProcessingStatus =
+  | "processed"
+  | "ocr_processed"
+  | "no_text_detected"
+  | "failed";
 
 export interface PageTextEvidence {
   page_number: number;
   text: string;
   character_count: number;
   has_text: boolean;
+  extraction_method?: ExtractionMethod;
+  ocr_confidence?: number | null;
 }
 
 export interface DocumentUploadResponse {
