@@ -1,4 +1,5 @@
 import HealthStatusCard from "@/components/HealthStatusCard";
+import DocumentUploadCard from "@/components/DocumentUploadCard";
 import {
   CheckCircle,
   Database,
@@ -31,7 +32,7 @@ export default function Home() {
 
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
           <span className="badge badge-sih">SIH 2026 • SIH26100</span>
-          <span className="badge badge-neutral">Stage: Foundation</span>
+          <span className="badge badge-success">Task 2A: Doc Extraction</span>
         </div>
       </header>
 
@@ -44,7 +45,7 @@ export default function Home() {
         <div className="card">
           <div className="section-title">
             <Layers size={20} color="var(--accent-indigo)" />
-            Core Stack & Foundation Setup
+            Document Pipeline & Architecture
           </div>
           <p
             style={{
@@ -53,36 +54,39 @@ export default function Home() {
               marginBottom: "1rem",
             }}
           >
-            Configured with clean modular layers ready for AI and verification pipelines.
+            Modular document processing engine with page-level traceability.
           </p>
 
           <div className="meta-list">
             <div className="meta-item">
-              <span className="meta-label">Frontend Framework</span>
-              <span className="meta-value">Next.js 14 (App Router + TS)</span>
+              <span className="meta-label">PDF Extraction Engine</span>
+              <span className="meta-value">PyMuPDF (fitz) v1.24+</span>
             </div>
             <div className="meta-item">
-              <span className="meta-label">Backend Framework</span>
-              <span className="meta-value">FastAPI + Pydantic v2 (Python 3.14)</span>
+              <span className="meta-label">Upload Endpoint</span>
+              <span className="meta-value">POST /api/v1/documents/upload</span>
             </div>
             <div className="meta-item">
-              <span className="meta-label">Database Access Layer</span>
-              <span className="meta-value">SQLAlchemy 2.0 + asyncpg</span>
+              <span className="meta-label">Validation Limits</span>
+              <span className="meta-value">PDF only • 10 MB Max</span>
             </div>
             <div className="meta-item">
-              <span className="meta-label">Database Target</span>
-              <span className="meta-value">PostgreSQL / Supabase (Async)</span>
+              <span className="meta-label">Evidence Granularity</span>
+              <span className="meta-value">1-Indexed Page Evidence</span>
             </div>
             <div className="meta-item">
-              <span className="meta-label">CORS Policy</span>
-              <span className="meta-value">http://localhost:3000 Allowed</span>
+              <span className="meta-label">Temp Storage Policy</span>
+              <span className="meta-value">Strict Cleanup on Completion</span>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Document Upload & Text Extraction Vertical Slice */}
+      <DocumentUploadCard />
+
       {/* Upcoming Modules Roadmap */}
-      <div>
+      <div style={{ marginTop: "2.5rem" }}>
         <div className="section-title">
           <Sparkles size={20} color="var(--accent-cyan)" />
           Planned Platform Modules (Upcoming Tasks)
@@ -92,14 +96,14 @@ export default function Home() {
             <div>
               <div className="roadmap-card-title">
                 <FileSearch size={18} color="var(--accent-blue)" />
-                Document Processing & OCR
+                OCR & Scanned PDF Extraction
               </div>
               <p className="roadmap-card-desc">
-                High-precision extraction for tender documents, technical specs, financial statements, and scanned certificates.
+                Optical character recognition for scanned certificates, stamped letters, and handwritten annotations (Task 2B).
               </p>
             </div>
             <span className="badge badge-neutral" style={{ alignSelf: "flex-start" }}>
-              Upcoming Task
+              Next Task
             </span>
           </div>
 

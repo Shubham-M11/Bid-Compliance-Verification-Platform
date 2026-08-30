@@ -1,6 +1,6 @@
 from typing import List, Union
 import json
-from pydantic import AnyHttpUrl, field_validator
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     DATABASE_URL: str = (
         "postgresql+asyncpg://postgres:postgres@localhost:5432/gem_compliance_db"
     )
+
+    # Document Upload Configuration (Task 2A)
+    MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024  # 10 MB limit
+    ALLOWED_EXTENSIONS: List[str] = ["pdf"]
+    ALLOWED_MIME_TYPES: List[str] = ["application/pdf"]
 
     model_config = SettingsConfigDict(
         env_file=".env",

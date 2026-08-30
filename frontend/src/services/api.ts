@@ -11,6 +11,27 @@ export interface HealthResponse {
   timestamp: string;
 }
 
+export type DocumentProcessingStatus = "processed" | "no_text_detected" | "failed";
+
+export interface PageTextEvidence {
+  page_number: number;
+  text: string;
+  character_count: number;
+  has_text: boolean;
+}
+
+export interface DocumentUploadResponse {
+  document_id: string;
+  filename: string;
+  content_type: string;
+  file_size: number;
+  page_count: number;
+  status: DocumentProcessingStatus;
+  pages: PageTextEvidence[];
+  message?: string;
+  created_at: string;
+}
+
 export interface ApiError {
   message: string;
   status?: number;
@@ -32,8 +53,8 @@ export async function getHealthStatus(): Promise<HealthResponse> {
       headers: {
         Accept: "application/json",
       },
-      // Ensure we don't cache health checks
       cache: "no-store",
+      signal: AbortSignal.timeout(6000),
     });
 
     if (!res.ok) {
@@ -45,6 +66,36 @@ export async function getHealthStatus(): Promise<HealthResponse> {
   } catch (error: unknown) {
     const errorMessage =
       error instanceof Error ? error.message : "Failed to connect to backend service";
+    throw new Error(errorMessage);
+  }
+}
+
+/**
+ * Upload a PDF document and extract page-by-page text evidence.
+ * Calls POST /api/v1/documents/upload
+ */
+export async function uploadDocument(file: File): Promise<DocumentUploadResponse> {
+  const url = `${API_BASE_URL}/api/v1/documents/upload`;
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      const errorDetail = data?.detail || `HTTP ${res.status}: ${res.statusText}`;
+      throw new Error(errorDetail);
+    }
+
+    return data as DocumentUploadResponse;
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to upload document";
     throw new Error(errorMessage);
   }
 }
