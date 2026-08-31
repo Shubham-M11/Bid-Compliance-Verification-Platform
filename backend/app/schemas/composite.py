@@ -197,6 +197,9 @@ class CompositeVerificationRequest(BaseModel):
     bid_metadata: Optional[BidMetadata] = Field(
         default=None, description="Tender context metadata for cross-matching"
     )
+    scoring_policy: Optional[ScoringPolicy] = Field(
+        default=None, description="Optional custom review-priority scoring policy overrides"
+    )
 
 
 class StatutoryVerificationsBundle(BaseModel):
@@ -219,13 +222,67 @@ class ExtractedEntitiesSummary(BaseModel):
     date_candidates: List[ExtractedEntityItem] = Field(default_factory=list)
 
 
+# ==============================================
+# Configurable Scoring Policy
+# ==============================================
+
+class ScoringPolicy(BaseModel):
+    """
+    Configurable review-priority scoring policy.
+    Decouples deduction weights and risk thresholds from verification logic,
+    allowing procurement authorities to configure tender evaluation priorities.
+    """
+    starting_score: int = Field(default=100, ge=1, le=1000, description="Baseline starting score")
+
+    # Statutory Deductions
+    gstin_format_penalty: int = Field(default=20, ge=0, description="Deduction for malformed GSTIN format")
+    gstin_checksum_penalty: int = Field(default=15, ge=0, description="Deduction for corrupted GSTIN Luhn Mod-36 checksum")
+    gstin_suspended_penalty: int = Field(default=30, ge=0, description="Deduction for suspended taxpayer status")
+    gstin_cancelled_penalty: int = Field(default=35, ge=0, description="Deduction for cancelled taxpayer status")
+    pan_format_penalty: int = Field(default=15, ge=0, description="Deduction for malformed PAN format")
+    oem_expired_penalty: int = Field(default=25, ge=0, description="Deduction for expired Manufacturer Authorization Form (MAF)")
+
+    # Relational Consistency Deductions (Rules R-01 to R-07)
+    r01_pan_gstin_mismatch_penalty: int = Field(default=25, ge=0, description="Deduction for PAN ↔ GSTIN embedded mismatch")
+    r02_legal_name_high_mismatch_penalty: int = Field(default=15, ge=0, description="Deduction for major legal name mismatch (<60%)")
+    r02_legal_name_med_mismatch_penalty: int = Field(default=5, ge=0, description="Deduction for partial legal name mismatch (60-79%)")
+    r03_bidder_oem_mismatch_penalty: int = Field(default=20, ge=0, description="Deduction for Bidder ↔ OEM partner mismatch")
+    r04_tender_ref_mismatch_penalty: int = Field(default=10, ge=0, description="Deduction for MAF ↔ Tender reference mismatch")
+    r05_maf_date_invalid_penalty: int = Field(default=25, ge=0, description="Deduction for MAF date window invalidity/expiry")
+    r06_udyam_entity_incompatibility_penalty: int = Field(default=10, ge=0, description="Deduction for Udyam org type ↔ PAN entity conflict")
+    r07_state_alignment_penalty: int = Field(default=0, ge=0, description="Deduction for state jurisdiction difference (Warning/Review only)")
+
+    # Risk Thresholds
+    low_risk_min_score: int = Field(default=85, ge=0, description="Minimum score to qualify for LOW_RISK tier")
+    medium_risk_min_score: int = Field(default=60, ge=0, description="Minimum score to qualify for MEDIUM_RISK tier")
+
+    # Risk Guidance Messages
+    low_risk_guidance: str = Field(
+        default="Low compliance risk detected; proceed to standard tender evaluation workflow.",
+        description="Advisory guidance for LOW_RISK review queue",
+    )
+    medium_risk_guidance: str = Field(
+        default="Moderate compliance risk or policy warnings detected; manual officer review recommended.",
+        description="Advisory guidance for MEDIUM_RISK review queue",
+    )
+    high_risk_guidance: str = Field(
+        default="Significant compliance risk or statutory inconsistency detected; manual officer review required.",
+        description="Advisory guidance for HIGH_RISK review queue",
+    )
+
+
 class CompositeVerificationResponse(BaseModel):
     """Complete composite compliance intelligence report."""
     verification_id: str = Field(..., description="Unique generated verification session ID")
     timestamp: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc), description="UTC timestamp of analysis"
     )
-    overall_score: int = Field(..., ge=0, le=100, description="Explainable compliance score (0 - 100)")
+    overall_score: int = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Decision-support Review Priority / Compliance Risk Score (0 - 100). Higher score indicates lower compliance risk.",
+    )
     risk_level: RiskLevel = Field(..., description="Decision-support risk category")
     risk_level_guidance: str = Field(..., description="Decision-support advisory statement")
     overall_status: CompositeStatus = Field(..., description="Overall compliance verdict")

@@ -174,6 +174,7 @@ class CompositeVerificationService:
             udyam_resp=udyam_resp,
             oem_resp=oem_resp,
             consistency_results=consistency_results,
+            policy=request.scoring_policy,
         )
 
         # Step 6: Assemble Complete Evidence Audit Trail

@@ -54,6 +54,7 @@ from app.schemas.composite import (
     RISK_GUIDANCE_MAP,
     RiskLevel,
     ScoreContribution,
+    ScoringPolicy,
     StatutoryVerificationsBundle,
 )
 
