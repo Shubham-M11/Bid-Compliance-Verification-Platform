@@ -37,6 +37,26 @@ from app.schemas.statutory import (
     VerificationSource,
 )
 
+from app.schemas.composite import (
+    BidMetadata,
+    CheckStatus,
+    ComplianceFinding,
+    CompositeStatus,
+    CompositeVerificationRequest,
+    CompositeVerificationResponse,
+    CrossConsistencyCheckResult,
+    EntitySource,
+    EntityType,
+    EvidenceItem,
+    ExtractedEntitiesSummary,
+    ExtractedEntityItem,
+    FindingSeverity,
+    RISK_GUIDANCE_MAP,
+    RiskLevel,
+    ScoreContribution,
+    StatutoryVerificationsBundle,
+)
+
 __all__ = [
     "HealthCheckResponse",
     "DocumentProcessingStatus",
@@ -71,4 +91,21 @@ __all__ = [
     "OEMRegistryResult",
     "OEMValidationResponse",
     "PresetComplianceScenario",
+    "RiskLevel",
+    "CompositeStatus",
+    "FindingSeverity",
+    "CheckStatus",
+    "EntityType",
+    "EntitySource",
+    "RISK_GUIDANCE_MAP",
+    "ExtractedEntityItem",
+    "EvidenceItem",
+    "CrossConsistencyCheckResult",
+    "ScoreContribution",
+    "ComplianceFinding",
+    "BidMetadata",
+    "CompositeVerificationRequest",
+    "StatutoryVerificationsBundle",
+    "ExtractedEntitiesSummary",
+    "CompositeVerificationResponse",
 ]

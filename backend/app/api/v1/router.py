@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import documents, health, statutory
+from app.api.v1.endpoints import compliance, documents, health, statutory
 
 api_router = APIRouter()
 
@@ -8,3 +8,4 @@ api_router = APIRouter()
 api_router.include_router(health.router, tags=["Health"])
 api_router.include_router(documents.router, prefix="/documents", tags=["Documents"])
 api_router.include_router(statutory.router, prefix="/statutory", tags=["Statutory Compliance"])
+api_router.include_router(compliance.router, prefix="/compliance", tags=["Compliance Intelligence"])
