@@ -1,173 +1,109 @@
-import HealthStatusCard from "@/components/HealthStatusCard";
+"use client";
+
+import React, { useState } from "react";
+import BidReviewWorkspace from "@/components/compliance/BidReviewWorkspace";
 import DocumentUploadCard from "@/components/DocumentUploadCard";
+import SystemStatusView from "@/components/SystemStatusView";
 import {
+  Activity,
   CheckCircle,
-  Database,
   FileCheck2,
   FileSearch,
+  FileText,
   Layers,
-  ShieldAlert,
+  Server,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
 
+type MainNavTab = "reviews" | "documents" | "status";
+
 export default function Home() {
+  const [activeTab, setActiveTab] = useState<MainNavTab>("reviews");
+
   return (
-    <main className="container">
-      {/* Platform Header */}
-      <header className="header">
-        <div className="brand-wrapper">
-          <div className="brand-logo">
-            <ShieldCheck size={28} />
+    <main className="app-container">
+      {/* Top Application Navbar */}
+      <header className="top-navbar">
+        <div className="brand-section">
+          <div className="brand-icon-box">
+            <ShieldCheck size={20} />
           </div>
           <div>
-            <h1 className="brand-title">
-              GeM Bid Compliance Verification Platform
+            <h1 className="brand-heading">
+              GeM Bid Compliance
             </h1>
-            <p className="brand-subtitle">
-              Smart India Hackathon (SIH) 2026 — Problem Statement SIH26100
+            <p className="brand-tagline">
+              Procurement Decision Support System
             </p>
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-          <span className="badge badge-sih">SIH 2026 • SIH26100</span>
-          <span className="badge badge-success">Task 2A: Doc Extraction</span>
+        {/* Center Navigation Tabs */}
+        <nav className="nav-links">
+          <button
+            type="button"
+            className={`nav-tab-btn ${activeTab === "reviews" ? "active" : ""}`}
+            onClick={() => setActiveTab("reviews")}
+          >
+            <ShieldCheck size={14} /> Bid Reviews
+          </button>
+          <button
+            type="button"
+            className={`nav-tab-btn ${activeTab === "documents" ? "active" : ""}`}
+            onClick={() => setActiveTab("documents")}
+          >
+            <FileText size={14} /> Document Extraction
+          </button>
+          <button
+            type="button"
+            className={`nav-tab-btn ${activeTab === "status" ? "active" : ""}`}
+            onClick={() => setActiveTab("status")}
+          >
+            <Server size={14} /> System Status
+          </button>
+        </nav>
+
+        {/* Right Status Pill */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <span className="ent-badge ent-badge-neutral" style={{ fontSize: "0.72rem" }}>
+            Deterministic Sandbox
+          </span>
         </div>
       </header>
 
-      {/* Grid: Health Status & Architecture Snapshot */}
-      <div className="grid-2">
-        {/* Backend Health Check Card */}
-        <HealthStatusCard />
-
-        {/* Foundation Architecture Summary */}
-        <div className="card">
-          <div className="section-title">
-            <Layers size={20} color="var(--accent-indigo)" />
-            Document Pipeline & Architecture
+      {/* Main Tab Views */}
+      {activeTab === "reviews" && (
+        <div>
+          <div style={{ marginBottom: "1.25rem" }}>
+            <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#ffffff", letterSpacing: "-0.01em" }}>
+              Bid Compliance Review
+            </h2>
+            <p style={{ fontSize: "0.84rem", color: "var(--text-secondary)" }}>
+              Review statutory credentials, authorization documents, and bid compliance evidence.
+            </p>
           </div>
-          <p
-            style={{
-              fontSize: "0.85rem",
-              color: "var(--text-secondary)",
-              marginBottom: "1rem",
-            }}
-          >
-            Modular document processing engine with page-level traceability.
-          </p>
 
-          <div className="meta-list">
-            <div className="meta-item">
-              <span className="meta-label">PDF Extraction Engine</span>
-              <span className="meta-value">PyMuPDF (fitz) v1.24+</span>
-            </div>
-            <div className="meta-item">
-              <span className="meta-label">Upload Endpoint</span>
-              <span className="meta-value">POST /api/v1/documents/upload</span>
-            </div>
-            <div className="meta-item">
-              <span className="meta-label">Validation Limits</span>
-              <span className="meta-value">PDF only • 10 MB Max</span>
-            </div>
-            <div className="meta-item">
-              <span className="meta-label">Evidence Granularity</span>
-              <span className="meta-value">1-Indexed Page Evidence</span>
-            </div>
-            <div className="meta-item">
-              <span className="meta-label">Temp Storage Policy</span>
-              <span className="meta-value">Strict Cleanup on Completion</span>
-            </div>
-          </div>
+          <BidReviewWorkspace />
         </div>
-      </div>
+      )}
 
-      {/* Document Upload & Text Extraction Vertical Slice */}
-      <DocumentUploadCard />
+      {activeTab === "documents" && (
+        <div>
+          <div style={{ marginBottom: "1.25rem" }}>
+            <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#ffffff", letterSpacing: "-0.01em" }}>
+              Document Processing & Page Evidence Extraction
+            </h2>
+            <p style={{ fontSize: "0.84rem", color: "var(--text-secondary)" }}>
+              Extract page-by-page text evidence using digital parser with automated OCR fallback.
+            </p>
+          </div>
 
-      {/* Upcoming Modules Roadmap */}
-      <div style={{ marginTop: "2.5rem" }}>
-        <div className="section-title">
-          <Sparkles size={20} color="var(--accent-cyan)" />
-          Planned Platform Modules (Upcoming Tasks)
+          <DocumentUploadCard />
         </div>
-        <div className="grid-3">
-          <div className="roadmap-card">
-            <div>
-              <div className="roadmap-card-title">
-                <FileSearch size={18} color="var(--accent-blue)" />
-                OCR & Scanned PDF Extraction
-              </div>
-              <p className="roadmap-card-desc">
-                Optical character recognition for scanned certificates, stamped letters, and handwritten annotations (Task 2B).
-              </p>
-            </div>
-            <span className="badge badge-neutral" style={{ alignSelf: "flex-start" }}>
-              Next Task
-            </span>
-          </div>
+      )}
 
-          <div className="roadmap-card">
-            <div>
-              <div className="roadmap-card-title">
-                <CheckCircle size={18} color="var(--accent-green)" />
-                Statutory Verification
-              </div>
-              <p className="roadmap-card-desc">
-                Automated multi-source cross-verification for GSTIN, PAN, Udyam MSME status, and OEM authorization.
-              </p>
-            </div>
-            <span className="badge badge-neutral" style={{ alignSelf: "flex-start" }}>
-              Upcoming Task
-            </span>
-          </div>
-
-          <div className="roadmap-card">
-            <div>
-              <div className="roadmap-card-title">
-                <FileCheck2 size={18} color="var(--accent-indigo)" />
-                Tender Intelligence Engine
-              </div>
-              <p className="roadmap-card-desc">
-                Rule-based and semantic cross-referencing between GeM tender clauses and bidder submissions.
-              </p>
-            </div>
-            <span className="badge badge-neutral" style={{ alignSelf: "flex-start" }}>
-              Upcoming Task
-            </span>
-          </div>
-
-          <div className="roadmap-card">
-            <div>
-              <div className="roadmap-card-title">
-                <ShieldAlert size={18} color="var(--accent-amber)" />
-                Risk & Scoring Engine
-              </div>
-              <p className="roadmap-card-desc">
-                Composite compliance scoring, anomaly detection, discrepancy flagging, and qualification recommendations.
-              </p>
-            </div>
-            <span className="badge badge-neutral" style={{ alignSelf: "flex-start" }}>
-              Upcoming Task
-            </span>
-          </div>
-
-          <div className="roadmap-card">
-            <div>
-              <div className="roadmap-card-title">
-                <Database size={18} color="var(--accent-cyan)" />
-                Audit Trail & Reporting
-              </div>
-              <p className="roadmap-card-desc">
-                Immutable verification history, timestamped evidence logging, and comprehensive compliance report generation.
-              </p>
-            </div>
-            <span className="badge badge-neutral" style={{ alignSelf: "flex-start" }}>
-              Upcoming Task
-            </span>
-          </div>
-        </div>
-      </div>
+      {activeTab === "status" && <SystemStatusView />}
     </main>
   );
 }

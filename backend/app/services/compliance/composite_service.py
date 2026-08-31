@@ -6,6 +6,7 @@ from app.schemas.composite import (
     BidMetadata,
     CompositeVerificationRequest,
     CompositeVerificationResponse,
+    EntitySource,
     EvidenceItem,
     ExtractedEntitiesSummary,
     ExtractedEntityItem,
@@ -87,28 +88,48 @@ class CompositeVerificationService:
             ]:
                 all_candidate_entities.extend(cand_list)
 
-        # Step 2: Resolve Statutory Requests (Explicit user inputs take precedence; fallback to extracted)
+        # Step 2: Dynamically resolve Bid Metadata if not provided or partially provided
+        resolved_metadata = request.bid_metadata or BidMetadata()
+        if not resolved_metadata.expected_bidder_name and extracted_summary.legal_name_candidates:
+            best_legal = max(extracted_summary.legal_name_candidates, key=lambda x: x.confidence)
+            resolved_metadata.expected_bidder_name = best_legal.value
+
+        if not resolved_metadata.tender_ref_number and extracted_summary.tender_ref_candidates:
+            best_tender = max(extracted_summary.tender_ref_candidates, key=lambda x: x.confidence)
+            resolved_metadata.tender_ref_number = best_tender.value
+
+        # Step 3: Resolve Statutory Requests (Explicit user inputs take precedence; fallback to extracted)
         gstin_req = request.explicit_gstin
         if not gstin_req and extracted_summary.gstin_candidates:
-            best_gstin = extracted_summary.gstin_candidates[0].value
-            gstin_req = GSTINValidationRequest(gstin=best_gstin)
+            best_gstin = max(extracted_summary.gstin_candidates, key=lambda x: x.confidence).value
+            gstin_req = GSTINValidationRequest(
+                gstin=best_gstin,
+                expected_legal_name=resolved_metadata.expected_bidder_name,
+                expected_state_code=resolved_metadata.tender_state_code,
+            )
 
         pan_req = request.explicit_pan
         if not pan_req and extracted_summary.pan_candidates:
-            best_pan = extracted_summary.pan_candidates[0].value
-            pan_req = PANValidationRequest(pan=best_pan)
+            best_pan = max(extracted_summary.pan_candidates, key=lambda x: x.confidence).value
+            pan_req = PANValidationRequest(
+                pan=best_pan,
+                expected_legal_name=resolved_metadata.expected_bidder_name,
+            )
 
         udyam_req = request.explicit_udyam
         if not udyam_req and extracted_summary.udyam_candidates:
-            best_udyam = extracted_summary.udyam_candidates[0].value
-            udyam_req = UdyamValidationRequest(udyam_registration_number=best_udyam)
+            best_udyam = max(extracted_summary.udyam_candidates, key=lambda x: x.confidence).value
+            udyam_req = UdyamValidationRequest(
+                udyam_registration_number=best_udyam,
+                expected_enterprise_name=resolved_metadata.expected_bidder_name,
+            )
 
         oem_req = request.explicit_oem
         if not oem_req and extracted_summary.oem_name_candidates:
             oem_name = extracted_summary.oem_name_candidates[0].value
             partner_name = (
-                request.bid_metadata.expected_bidder_name
-                if request.bid_metadata and request.bid_metadata.expected_bidder_name
+                resolved_metadata.expected_bidder_name
+                if resolved_metadata.expected_bidder_name
                 else (extracted_summary.legal_name_candidates[0].value if extracted_summary.legal_name_candidates else "Unknown Partner")
             )
             maf_num = (
@@ -116,13 +137,28 @@ class CompositeVerificationService:
                 if extracted_summary.maf_number_candidates
                 else None
             )
+            tender_num = (
+                resolved_metadata.tender_ref_number
+                if resolved_metadata.tender_ref_number
+                else (extracted_summary.tender_ref_candidates[0].value if extracted_summary.tender_ref_candidates else None)
+            )
+
+            v_from = None
+            v_until = None
+            if len(extracted_summary.date_candidates) >= 2:
+                v_from = extracted_summary.date_candidates[0].value
+                v_until = extracted_summary.date_candidates[1].value
+
             oem_req = OEMValidationRequest(
                 oem_name=oem_name,
                 authorized_partner_name=partner_name,
                 maf_number=maf_num,
+                tender_ref_number=tender_num,
+                valid_from=v_from,
+                valid_until=v_until,
             )
 
-        # Step 3: Run Individual Statutory Verifications (Task 3A)
+        # Step 4: Run Individual Statutory Verifications (Task 3A)
         gstin_resp: Optional[GSTINValidationResponse] = None
         pan_resp: Optional[PANValidationResponse] = None
         udyam_resp: Optional[UdyamValidationResponse] = None
@@ -135,7 +171,10 @@ class CompositeVerificationService:
         elif gstin_resp and gstin_resp.deterministic.extracted_pan:
             # Fallback to validating the PAN extracted from the validated GSTIN
             pan_resp = await self.statutory_service.validate_pan(
-                PANValidationRequest(pan=gstin_resp.deterministic.extracted_pan)
+                PANValidationRequest(
+                    pan=gstin_resp.deterministic.extracted_pan,
+                    expected_legal_name=resolved_metadata.expected_bidder_name,
+                )
             )
 
         if udyam_req:
@@ -150,17 +189,17 @@ class CompositeVerificationService:
             oem=oem_resp,
         )
 
-        # Step 4: Run Cross-Entity Consistency Checks (Rules R-01 through R-07)
+        # Step 5: Run Cross-Entity Consistency Checks (Rules R-01 through R-07)
         consistency_results = self.consistency_engine.evaluate_all(
             gstin_resp=gstin_resp,
             pan_resp=pan_resp,
             udyam_resp=udyam_resp,
             oem_resp=oem_resp,
-            bid_metadata=request.bid_metadata,
+            bid_metadata=resolved_metadata,
             candidate_entities=all_candidate_entities,
         )
 
-        # Step 5: Run Explainable Scoring Engine
+        # Step 6: Run Explainable Scoring Engine
         (
             overall_score,
             risk_level,
@@ -177,7 +216,7 @@ class CompositeVerificationService:
             policy=request.scoring_policy,
         )
 
-        # Step 6: Assemble Complete Evidence Audit Trail
+        # Step 7: Assemble Complete Evidence Audit Trail & Enrich Findings
         audit_trail: List[EvidenceItem] = []
         for check in consistency_results:
             audit_trail.extend(check.evidence)
@@ -194,9 +233,24 @@ class CompositeVerificationService:
                     filename=item.filename,
                     page_number=item.page_number,
                     context_snippet=item.context_snippet,
+                    source_type=EntitySource.DOCUMENT_EXTRACTED,
                     finding_description=f"Extracted {item.entity_type.value} '{item.value}' from page {item.page_number} (Confidence: {item.confidence:.0%}).",
                 )
             )
+
+        # Enrich any findings without linked evidence with matching audit trail items
+        for f in findings:
+            if not f.linked_evidence:
+                matching_ev = [
+                    ev for ev in audit_trail
+                    if ev.rule_id == f.rule_id
+                    or (f.rule_id.startswith("STAT-GST") and ev.field_name.upper() == "GSTIN")
+                    or (f.rule_id.startswith("STAT-PAN") and ev.field_name.upper() == "PAN")
+                    or (f.rule_id.startswith("STAT-UDYAM") and ev.field_name.upper() == "UDYAM")
+                    or (f.rule_id.startswith("STAT-OEM") and ev.field_name.upper() in ["OEM_NAME", "MAF_NUMBER"])
+                ]
+                if matching_ev:
+                    f.linked_evidence = matching_ev[:2]
 
         return CompositeVerificationResponse(
             verification_id=verification_id,

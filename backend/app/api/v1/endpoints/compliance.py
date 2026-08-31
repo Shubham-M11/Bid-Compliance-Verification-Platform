@@ -1,8 +1,9 @@
 from typing import List, Optional
-from fastapi import APIRouter, Body, HTTPException, status
+from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
 
 from app.schemas.composite import (
+    BidMetadata,
     CompositeVerificationRequest,
     CompositeVerificationResponse,
     ExtractedEntitiesSummary,
@@ -16,6 +17,7 @@ from app.services.compliance.extractor import (
     DocumentEntityExtractor,
     document_entity_extractor,
 )
+from app.services.documents.service import DocumentService, document_service
 
 router = APIRouter()
 
@@ -97,4 +99,52 @@ async def extract_entities_from_text(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error extracting entities from text: {str(e)}",
+        )
+
+
+@router.post(
+    "/verify-document",
+    response_model=CompositeVerificationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Upload PDF and execute end-to-end composite verification",
+    description=(
+        "Unified endpoint: Uploads a bid PDF, extracts text/page evidence via PyMuPDF/OCR, "
+        "extracts statutory and tender entities, executes statutory & consistency checks, and produces "
+        "an explainable composite review response in a single seamless call."
+    ),
+)
+async def verify_document(
+    file: UploadFile = File(..., description="Bid PDF document to process and verify"),
+    expected_bidder_name: Optional[str] = Form(default=None, description="Optional expected bidder name"),
+    tender_ref_number: Optional[str] = Form(default=None, description="Optional expected tender reference"),
+    document_svc: DocumentService = Depends(lambda: document_service),
+) -> CompositeVerificationResponse:
+    """Handle end-to-end PDF upload, document text extraction, and composite compliance verification."""
+    try:
+        # 1. Process and extract document text evidence (PyMuPDF with Tesseract OCR fallback)
+        doc_response = await document_svc.process_uploaded_file(file)
+
+        # 2. Build composite verification request with document evidence
+        bid_meta = (
+            BidMetadata(
+                expected_bidder_name=expected_bidder_name,
+                tender_ref_number=tender_ref_number,
+            )
+            if (expected_bidder_name or tender_ref_number)
+            else None
+        )
+
+        verification_req = CompositeVerificationRequest(
+            documents=[doc_response],
+            bid_metadata=bid_meta,
+        )
+
+        # 3. Execute complete composite compliance pipeline
+        return await composite_verification_service.verify_composite(verification_req)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error during document compliance verification: {str(e)}",
         )

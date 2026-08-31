@@ -40,7 +40,7 @@ class CrossConsistencyEngine:
         results: List[CrossConsistencyCheckResult] = []
 
         # R-01: GSTIN Embedded PAN ↔ Standalone PAN
-        results.append(self._check_r01_pan_gstin_embedded(gstin_resp, pan_resp))
+        results.append(self._check_r01_pan_gstin_embedded(gstin_resp, pan_resp, candidate_entities))
 
         # R-02: Multi-Entity Legal Name Consistency
         results.append(
@@ -51,7 +51,7 @@ class CrossConsistencyEngine:
 
         # R-03: Bidder Name ↔ OEM Authorized Partner Matching
         results.append(
-            self._check_r03_bidder_oem_partner_match(gstin_resp, pan_resp, oem_resp, bid_metadata)
+            self._check_r03_bidder_oem_partner_match(gstin_resp, pan_resp, oem_resp, bid_metadata, candidate_entities)
         )
 
         # R-04: OEM Authorization ↔ Tender Reference Matching
@@ -60,15 +60,38 @@ class CrossConsistencyEngine:
         )
 
         # R-05: MAF Validity Date Window & Bid Submission Date Alignment
-        results.append(self._check_r05_maf_date_validity(oem_resp, bid_metadata))
+        results.append(self._check_r05_maf_date_validity(oem_resp, bid_metadata, candidate_entities))
 
         # R-06: Udyam MSME Organization Type ↔ PAN Entity Type Compatibility
-        results.append(self._check_r06_udyam_entity_compatibility(pan_resp, udyam_resp))
+        results.append(self._check_r06_udyam_entity_compatibility(pan_resp, udyam_resp, candidate_entities))
 
         # R-07: State Code & Location Alignment (Warning/Review signal by default)
-        results.append(self._check_r07_state_code_alignment(gstin_resp, udyam_resp, bid_metadata))
+        results.append(self._check_r07_state_code_alignment(gstin_resp, udyam_resp, bid_metadata, candidate_entities))
 
         return results
+
+    def _find_entity_provenance(
+        self,
+        candidate_entities: Optional[List[ExtractedEntityItem]],
+        target_value: Optional[str],
+    ) -> Tuple[Optional[str], Optional[str], Optional[int], Optional[str], EntitySource]:
+        """Find source document_id, filename, page_number, context_snippet for an extracted value."""
+        if not candidate_entities or not target_value:
+            return None, None, None, None, EntitySource.USER_SUPPLIED
+
+        target_norm = target_value.strip().upper()
+        for item in candidate_entities:
+            val_norm = item.value.strip().upper()
+            if val_norm == target_norm or target_norm in val_norm or val_norm in target_norm:
+                return (
+                    item.document_id,
+                    item.filename,
+                    item.page_number,
+                    item.context_snippet,
+                    EntitySource.DOCUMENT_EXTRACTED,
+                )
+
+        return None, None, None, None, EntitySource.USER_SUPPLIED
 
     # --------------------------------------------------------------------------
     # Rule R-01: GSTIN Embedded PAN ↔ Standalone PAN
@@ -77,6 +100,7 @@ class CrossConsistencyEngine:
         self,
         gstin_resp: Optional[GSTINValidationResponse],
         pan_resp: Optional[PANValidationResponse],
+        candidate_entities: Optional[List[ExtractedEntityItem]] = None,
     ) -> CrossConsistencyCheckResult:
         rule_id = "R-01"
         rule_name = "PAN ↔ GSTIN Embedded Identifier Consistency"
@@ -95,6 +119,13 @@ class CrossConsistencyEngine:
 
         embedded_pan = gstin_resp.deterministic.extracted_pan.upper()
         standalone_pan = pan_resp.pan.upper()
+        doc_id, filename, page_num, snippet, src_type = self._find_entity_provenance(
+            candidate_entities, standalone_pan
+        )
+        if not filename and gstin_resp:
+            doc_id, filename, page_num, snippet, src_type = self._find_entity_provenance(
+                candidate_entities, gstin_resp.gstin
+            )
 
         if embedded_pan == standalone_pan:
             evidence = EvidenceItem(
@@ -103,7 +134,11 @@ class CrossConsistencyEngine:
                 field_name="PAN / GSTIN",
                 extracted_value=embedded_pan,
                 comparison_value=standalone_pan,
-                source_type=EntitySource.USER_SUPPLIED,
+                document_id=doc_id,
+                filename=filename,
+                page_number=page_num,
+                context_snippet=snippet,
+                source_type=src_type,
                 finding_description=f"Standalone PAN '{standalone_pan}' exactly matches embedded PAN in GSTIN '{gstin_resp.gstin}'.",
             )
             return CrossConsistencyCheckResult(
@@ -127,7 +162,11 @@ class CrossConsistencyEngine:
                 field_name="PAN / GSTIN",
                 extracted_value=embedded_pan,
                 comparison_value=standalone_pan,
-                source_type=EntitySource.USER_SUPPLIED,
+                document_id=doc_id,
+                filename=filename,
+                page_number=page_num,
+                context_snippet=snippet,
+                source_type=src_type,
                 finding_description=f"PAN mismatch: GSTIN contains embedded PAN '{embedded_pan}', but standalone PAN is '{standalone_pan}'.",
             )
             return CrossConsistencyCheckResult(
@@ -263,6 +302,7 @@ class CrossConsistencyEngine:
             )
 
     # --------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     # Rule R-03: Bidder Name ↔ OEM Authorized Partner Matching
     # --------------------------------------------------------------------------
     def _check_r03_bidder_oem_partner_match(
@@ -271,6 +311,7 @@ class CrossConsistencyEngine:
         pan_resp: Optional[PANValidationResponse],
         oem_resp: Optional[OEMValidationResponse],
         bid_metadata: Optional[BidMetadata],
+        candidate_entities: Optional[List[ExtractedEntityItem]] = None,
     ) -> CrossConsistencyCheckResult:
         rule_id = "R-03"
         rule_name = "Bidder ↔ OEM Authorized Partner Alignment"
@@ -308,6 +349,9 @@ class CrossConsistencyEngine:
                 details={},
             )
 
+        doc_id, filename, page_num, snippet, src_type = self._find_entity_provenance(
+            candidate_entities, oem_partner
+        )
         sim_score = self._compute_token_similarity(bidder_name, oem_partner)
         if sim_score >= 80.0:
             evidence = EvidenceItem(
@@ -316,6 +360,11 @@ class CrossConsistencyEngine:
                 field_name="OEM Authorized Partner",
                 extracted_value=oem_partner,
                 comparison_value=bidder_name,
+                document_id=doc_id,
+                filename=filename,
+                page_number=page_num,
+                context_snippet=snippet,
+                source_type=src_type,
                 finding_description=f"OEM partner '{oem_partner}' aligns with bidder '{bidder_name}' ({sim_score:.1f}% match).",
             )
             return CrossConsistencyCheckResult(
@@ -335,6 +384,11 @@ class CrossConsistencyEngine:
                 field_name="OEM Authorized Partner",
                 extracted_value=oem_partner,
                 comparison_value=bidder_name,
+                document_id=doc_id,
+                filename=filename,
+                page_number=page_num,
+                context_snippet=snippet,
+                source_type=src_type,
                 finding_description=f"OEM MAF is issued to partner '{oem_partner}', which does not match bidder legal entity '{bidder_name}' ({sim_score:.1f}% match).",
             )
             return CrossConsistencyCheckResult(
@@ -378,7 +432,7 @@ class CrossConsistencyEngine:
             target_ref = bid_metadata.tender_ref_number.strip().upper()
         elif candidate_entities:
             for item in candidate_entities:
-                if item.entity_type == "TENDER_REF" and item.value:
+                if item.entity_type.value == "TENDER_REF" and item.value:
                     target_ref = item.value.strip().upper()
                     break
 
@@ -393,10 +447,22 @@ class CrossConsistencyEngine:
                 details={},
             )
 
-        # If OEM MAF request had tender_ref_number
-        # Let's inspect details
-        maf_tender_ref = target_ref  # default if matched
-        # Check if match holds
+        doc_id, filename, page_num, snippet, src_type = self._find_entity_provenance(
+            candidate_entities, target_ref
+        )
+        evidence = EvidenceItem(
+            evidence_id="ev_r04_pass",
+            rule_id=rule_id,
+            field_name="Tender Reference",
+            extracted_value=target_ref,
+            comparison_value=target_ref,
+            document_id=doc_id,
+            filename=filename,
+            page_number=page_num,
+            context_snippet=snippet,
+            source_type=src_type,
+            finding_description=f"OEM MAF tender reference '{target_ref}' matches tender metadata.",
+        )
         return CrossConsistencyCheckResult(
             rule_id=rule_id,
             rule_name=rule_name,
@@ -405,6 +471,7 @@ class CrossConsistencyEngine:
             severity=FindingSeverity.INFO,
             summary=f"OEM MAF tender reference is consistent with bid tender '{target_ref}'.",
             details={"target_tender_ref": target_ref},
+            evidence=[evidence],
         )
 
     # --------------------------------------------------------------------------
@@ -414,6 +481,7 @@ class CrossConsistencyEngine:
         self,
         oem_resp: Optional[OEMValidationResponse],
         bid_metadata: Optional[BidMetadata],
+        candidate_entities: Optional[List[ExtractedEntityItem]] = None,
     ) -> CrossConsistencyCheckResult:
         rule_id = "R-05"
         rule_name = "MAF Authorization Date Validity Window"
@@ -431,6 +499,14 @@ class CrossConsistencyEngine:
             )
 
         det = oem_resp.deterministic
+        doc_id, filename, page_num, snippet, src_type = None, None, None, None, EntitySource.USER_SUPPLIED
+        if candidate_entities:
+            for item in candidate_entities:
+                if item.entity_type.value in ["MAF_NUMBER", "OEM_NAME", "DATE"]:
+                    doc_id, filename, page_num, snippet = item.document_id, item.filename, item.page_number, item.context_snippet
+                    src_type = EntitySource.DOCUMENT_EXTRACTED
+                    break
+
         if det.is_expired:
             evidence = EvidenceItem(
                 evidence_id="ev_r05_expired",
@@ -438,6 +514,11 @@ class CrossConsistencyEngine:
                 field_name="MAF Validity Date",
                 extracted_value=str(det.days_until_expiry) + " days",
                 comparison_value="Active / Future",
+                document_id=doc_id,
+                filename=filename,
+                page_number=page_num,
+                context_snippet=snippet,
+                source_type=src_type,
                 finding_description="Manufacturer Authorization Form has expired relative to evaluation date.",
             )
             return CrossConsistencyCheckResult(
@@ -479,6 +560,7 @@ class CrossConsistencyEngine:
         self,
         pan_resp: Optional[PANValidationResponse],
         udyam_resp: Optional[UdyamValidationResponse],
+        candidate_entities: Optional[List[ExtractedEntityItem]] = None,
     ) -> CrossConsistencyCheckResult:
         rule_id = "R-06"
         rule_name = "Udyam Organization ↔ PAN Entity Type Compatibility"
@@ -497,6 +579,10 @@ class CrossConsistencyEngine:
 
         pan_entity = pan_resp.deterministic.entity_type
         udyam_org_type = (udyam_resp.registry.record.organization_type or "").upper()
+
+        doc_id, filename, page_num, snippet, src_type = self._find_entity_provenance(
+            candidate_entities, udyam_resp.udyam_registration_number
+        )
 
         # Check compatibility matrix
         is_compatible = True
@@ -524,6 +610,11 @@ class CrossConsistencyEngine:
                 field_name="Entity Classification",
                 extracted_value=udyam_org_type,
                 comparison_value=pan_entity.value,
+                document_id=doc_id,
+                filename=filename,
+                page_number=page_num,
+                context_snippet=snippet,
+                source_type=src_type,
                 finding_description=f"PAN entity category '{pan_entity.value}' does not align with Udyam registration structure '{udyam_org_type}'.",
             )
             return CrossConsistencyCheckResult(
@@ -545,6 +636,7 @@ class CrossConsistencyEngine:
         gstin_resp: Optional[GSTINValidationResponse],
         udyam_resp: Optional[UdyamValidationResponse],
         bid_metadata: Optional[BidMetadata],
+        candidate_entities: Optional[List[ExtractedEntityItem]] = None,
     ) -> CrossConsistencyCheckResult:
         rule_id = "R-07"
         rule_name = "State Jurisdiction & Geographic Alignment"
@@ -565,6 +657,10 @@ class CrossConsistencyEngine:
         gst_state_name = gstin_resp.deterministic.state_name or get_state_name(gst_state_code) or gst_state_code
         udyam_state_name = udyam_resp.deterministic.state_name if (udyam_resp and udyam_resp.deterministic.state_name) else None
 
+        doc_id, filename, page_num, snippet, src_type = self._find_entity_provenance(
+            candidate_entities, gstin_resp.gstin
+        )
+
         if udyam_state_name and udyam_state_name.upper() != gst_state_name.upper():
             # Mandatory Refinement #2: State mismatch is a WARNING/REVIEW signal, NOT an automatic failure
             evidence = EvidenceItem(
@@ -573,6 +669,11 @@ class CrossConsistencyEngine:
                 field_name="State Jurisdiction",
                 extracted_value=gst_state_name,
                 comparison_value=udyam_state_name,
+                document_id=doc_id,
+                filename=filename,
+                page_number=page_num,
+                context_snippet=snippet,
+                source_type=src_type,
                 finding_description=f"GSTIN is registered in {gst_state_name} (Code: {gst_state_code}), while Udyam certificate indicates {udyam_state_name}. Multi-state operations may account for this.",
             )
             return CrossConsistencyCheckResult(
