@@ -347,6 +347,6 @@ def test_tesseract_ocr_processor_discovery_and_configuration(tmp_path):
     if standard_win_path.is_file():
         processor_auto = TesseractOCRProcessor()
         assert processor_auto.is_available() is True
-        assert processor_auto._tesseract_cmd == str(standard_win_path)
-        assert pytesseract.pytesseract.tesseract_cmd == str(standard_win_path)
+        assert Path(processor_auto._tesseract_cmd).resolve() == standard_win_path.resolve()
+        assert Path(pytesseract.pytesseract.tesseract_cmd).resolve() == standard_win_path.resolve()
 

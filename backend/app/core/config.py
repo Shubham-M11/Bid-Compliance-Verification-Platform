@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     OCR_MIN_TEXT_THRESHOLD: int = 15  # Minimum character count to classify as digital text
     OCR_DPI: int = 200  # Resolution for rendering scanned PDF pages to in-memory images
 
+    # Statutory Compliance Verification (Task 3A)
+    STATUTORY_PROVIDER_MODE: str = "mock"  # "mock", "sandbox", or "live"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
