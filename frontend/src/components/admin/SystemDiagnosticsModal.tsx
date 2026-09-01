@@ -8,6 +8,7 @@ import {
   Clock,
   Cpu,
   ExternalLink,
+  Info,
   RefreshCw,
   Server,
   ShieldCheck,
@@ -38,7 +39,7 @@ export default function SystemDiagnosticsModal({
       setLastChecked(new Date());
     } catch (err: unknown) {
       const errorMsg =
-        err instanceof Error ? err.message : "Unable to reach backend service";
+        err instanceof Error ? err.message : "Unable to reach backend verification service";
       setError(errorMsg);
       setHealth(null);
       setLastChecked(new Date());
@@ -77,11 +78,11 @@ export default function SystemDiagnosticsModal({
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <Server size={18} color="var(--brand-blue)" />
               <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                System Diagnostics & Technical Specifications
+                System Status & Environment Information
               </h3>
             </div>
             <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginTop: "2px" }}>
-              Backend service connectivity, OCR engine runtime, and deterministic verification architecture.
+              Operational status of verification services, document extraction pipeline, and OCR subsystems.
             </p>
           </div>
           <button
@@ -99,7 +100,7 @@ export default function SystemDiagnosticsModal({
           <div
             className="ent-card"
             style={{
-              background: "var(--bg-surface)",
+              background: "var(--bg-app)",
               border: "1px solid var(--border-subtle)",
               padding: "1.2rem",
             }}
@@ -113,7 +114,7 @@ export default function SystemDiagnosticsModal({
               }}
             >
               <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "var(--text-primary)" }}>
-                Backend REST API Connectivity
+                Compliance Verification Service Status
               </div>
               <div>
                 {loading ? (
@@ -126,7 +127,7 @@ export default function SystemDiagnosticsModal({
                   </span>
                 ) : (
                   <span className="ent-badge ent-badge-success">
-                    <CheckCircle2 size={11} /> Healthy ({health?.status || "OK"})
+                    <CheckCircle2 size={11} /> Operational ({health?.status || "OK"})
                   </span>
                 )}
               </div>
@@ -141,134 +142,76 @@ export default function SystemDiagnosticsModal({
                   borderRadius: "var(--radius-sm)",
                   color: "var(--status-critical-text)",
                   fontSize: "0.8rem",
-                  marginBottom: "0.75rem",
+                  marginBottom: "0.85rem",
                 }}
               >
                 {error}
               </div>
             )}
 
-            {health && (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                  gap: "0.65rem",
-                  fontSize: "0.8rem",
-                }}
-              >
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span style={{ color: "var(--text-muted)", fontSize: "0.72rem" }}>App Name</span>
-                  <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{health.app_name}</span>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span style={{ color: "var(--text-muted)", fontSize: "0.72rem" }}>API Version</span>
-                  <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{health.version}</span>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span style={{ color: "var(--text-muted)", fontSize: "0.72rem" }}>Environment</span>
-                  <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{health.environment}</span>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span style={{ color: "var(--text-muted)", fontSize: "0.72rem" }}>OCR Status</span>
-                  <span style={{ fontWeight: 600, color: health.ocr_available ? "var(--status-success-text)" : "var(--status-warning-text)" }}>
-                    {health.ocr_available ? "Tesseract OCR Active" : "Digital Parser (OCR Fallback)"}
-                  </span>
-                </div>
-              </div>
-            )}
-
             <div
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginTop: "1rem",
-                paddingTop: "0.75rem",
-                borderTop: "1px solid var(--border-subtle)",
-                fontSize: "0.75rem",
-                color: "var(--text-muted)",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "0.75rem",
+                fontSize: "0.8rem",
               }}
             >
-              <span>
-                {lastChecked ? `Checked: ${lastChecked.toLocaleTimeString()}` : "Pending check"}
-              </span>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <a
-                  href={`${API_BASE_URL}/docs`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ent-btn ent-btn-secondary ent-btn-sm"
-                >
-                  <ExternalLink size={12} /> API Swagger Docs
-                </a>
-                <button
-                  type="button"
-                  className="ent-btn ent-btn-primary ent-btn-sm"
-                  onClick={checkHealth}
-                  disabled={loading}
-                >
-                  <RefreshCw size={12} className={loading ? "spin" : ""} /> Refresh
-                </button>
+              <div style={{ color: "var(--text-secondary)" }}>
+                Service Version:{" "}
+                <strong style={{ color: "var(--text-primary)" }}>{health?.version || "1.0.0"}</strong>
               </div>
+              <div style={{ color: "var(--text-secondary)" }}>
+                Environment Mode:{" "}
+                <strong style={{ color: "var(--text-primary)" }}>{health?.environment || "production"}</strong>
+              </div>
+              <div style={{ color: "var(--text-secondary)" }}>
+                OCR Subsystem:{" "}
+                <strong style={{ color: "var(--text-primary)" }}>
+                  {health?.ocr_available ? "Enabled & Available" : "Standard Fallback Active"}
+                </strong>
+              </div>
+              <div style={{ color: "var(--text-secondary)" }}>
+                Last Verified:{" "}
+                <strong style={{ color: "var(--text-primary)" }}>
+                  {lastChecked ? lastChecked.toLocaleTimeString("en-IN") : "Never"}
+                </strong>
+              </div>
+            </div>
+
+            <div style={{ marginTop: "1rem", display: "flex", justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                className="ent-btn ent-btn-secondary ent-btn-sm"
+                onClick={checkHealth}
+                disabled={loading}
+              >
+                <RefreshCw size={12} className={loading ? "spin" : ""} />
+                <span>Refresh Status</span>
+              </button>
             </div>
           </div>
 
-          {/* Architecture Specifications */}
+          {/* Architecture & Provider Transparency Disclosure */}
           <div
             className="ent-card"
             style={{
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-subtle)",
               padding: "1.2rem",
+              background: "var(--bg-app)",
+              border: "1px solid var(--border-subtle)",
             }}
           >
-            <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "var(--text-primary)", marginBottom: "0.75rem" }}>
-              Deterministic Verification Principles
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.65rem" }}>
+              <Info size={16} color="var(--brand-blue)" />
+              <h4 style={{ fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                Verification System Architecture & Data Policy
+              </h4>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <CheckCircle2 size={15} color="var(--status-success-text)" style={{ flexShrink: 0, marginTop: "2px" }} />
-                <div>
-                  <strong style={{ color: "var(--text-primary)" }}>Luhn Mod-36 Algorithmic Validation: </strong>
-                  Offline mathematical validation for 15-character Indian GSTINs with zero API latency.
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <CheckCircle2 size={15} color="var(--status-success-text)" style={{ flexShrink: 0, marginTop: "2px" }} />
-                <div>
-                  <strong style={{ color: "var(--text-primary)" }}>Zero-Fabrication Policy: </strong>
-                  Sandbox registries never invent fake names or penalize unregistered authentic credentials arbitrarily.
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <CheckCircle2 size={15} color="var(--status-success-text)" style={{ flexShrink: 0, marginTop: "2px" }} />
-                <div>
-                  <strong style={{ color: "var(--text-primary)" }}>Human Officer Authority Guardrail: </strong>
-                  The system produces explainable priority scores for evaluation assistance; procurement awards require human officer sign-off.
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Footer */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            marginTop: "1.25rem",
-            paddingTop: "0.75rem",
-            borderTop: "1px solid var(--border-subtle)",
-          }}
-        >
-          <button
-            type="button"
-            className="ent-btn ent-btn-secondary"
-            onClick={onClose}
-          >
-            Close
-          </button>
+            <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: 1.5, margin: 0 }}>
+              The platform executes mathematical verification rules (such as ISO/IEC 7064 Mod-36 checksums), document text extraction, temporal validity windows, and entity cross-referencing. In this evaluation deployment, statutory checks reference deterministic validation rules and controlled test registries. All evaluations remain advisory to assist authorized procurement officers and evaluation committees.
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Edit3, Play, X } from "lucide-react";
+import { Check, Edit3, Play, ShieldCheck, X } from "lucide-react";
 import type { CompositeVerificationRequest } from "@/services/types/compliance";
 
 interface ManualVerificationModalProps {
@@ -17,16 +17,26 @@ export default function ManualVerificationModal({
   onSubmit,
   isLoading = false,
 }: ManualVerificationModalProps) {
-  const [expectedName, setExpectedName] = useState("Tech Mahindra Limited");
-  const [tenderRef, setTenderRef] = useState("GEM/2026/B/890123");
-  const [gstin, setGstin] = useState("27AAACT2727Q1ZW");
-  const [pan, setPan] = useState("AAACT2727Q");
+  const [expectedName, setExpectedName] = useState("");
+  const [tenderRef, setTenderRef] = useState("");
+  const [gstin, setGstin] = useState("");
+  const [pan, setPan] = useState("");
   const [udyam, setUdyam] = useState("");
-  const [oemName, setOemName] = useState("Hewlett Packard Enterprise India Private Limited");
-  const [partnerName, setPartnerName] = useState("Tech Mahindra Limited");
-  const [mafNumber, setMafNumber] = useState("HPE-IND-MAF-2026-0045");
+  const [oemName, setOemName] = useState("");
+  const [partnerName, setPartnerName] = useState("");
+  const [mafNumber, setMafNumber] = useState("");
 
   if (!isOpen) return null;
+
+  const handleFillDemoValues = () => {
+    setExpectedName("Tech Mahindra Limited");
+    setTenderRef("GEM/2026/B/890123");
+    setGstin("27AAACT2727Q1ZW");
+    setPan("AAACT2727Q");
+    setOemName("Hewlett Packard Enterprise India Private Limited");
+    setPartnerName("Tech Mahindra Limited");
+    setMafNumber("HPE-IND-MAF-2026-0045");
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +63,7 @@ export default function ManualVerificationModal({
       explicit_oem: oemName.trim()
         ? {
             oem_name: oemName.trim(),
-            authorized_partner_name: partnerName.trim() || expectedName.trim(),
+            authorized_partner_name: partnerName.trim() || expectedName.trim() || "Bidder Submission",
             maf_number: mafNumber.trim() || undefined,
             tender_ref_number: tenderRef.trim() || undefined,
           }
@@ -69,42 +79,54 @@ export default function ManualVerificationModal({
 
   return (
     <div className="ent-modal-overlay" onClick={onClose}>
-      <div className="ent-modal-content" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="ent-modal-content"
+        style={{ maxWidth: "640px" }}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: "1rem",
-            paddingBottom: "0.75rem",
+            marginBottom: "1.25rem",
+            paddingBottom: "0.85rem",
             borderBottom: "1px solid var(--border-subtle)",
           }}
         >
           <div>
-            <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#ffffff" }}>
-              Manual Credential Verification
+            <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)" }}>
+              Enter Verification Details
             </h3>
-            <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
-              Enter statutory and OEM parameters for direct compliance evaluation
+            <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: "2px" }}>
+              Provide statutory credentials and tender parameters for automated compliance review
             </p>
           </div>
-          <button
-            type="button"
-            className="ent-btn ent-btn-secondary ent-btn-sm"
-            onClick={onClose}
-          >
-            <X size={15} />
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <button
+              type="button"
+              className="ent-btn ent-btn-ghost ent-btn-sm"
+              onClick={handleFillDemoValues}
+              style={{ fontSize: "0.72rem" }}
+            >
+              Fill Example
+            </button>
+            <button
+              type="button"
+              className="ent-btn ent-btn-secondary ent-btn-sm"
+              onClick={onClose}
+            >
+              <X size={15} />
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "0.75rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "0.85rem" }}>
               <div>
-                <label style={{ fontSize: "0.76rem", color: "var(--text-secondary)", fontWeight: 600 }}>
-                  Bidder Legal Name
-                </label>
+                <label className="ent-label">Bidder Legal Name</label>
                 <input
                   type="text"
                   className="ent-input"
@@ -115,116 +137,102 @@ export default function ManualVerificationModal({
               </div>
 
               <div>
-                <label style={{ fontSize: "0.76rem", color: "var(--text-secondary)", fontWeight: 600 }}>
-                  Tender Reference Number
-                </label>
+                <label className="ent-label">Tender Reference</label>
                 <input
                   type="text"
                   className="ent-input"
                   value={tenderRef}
                   onChange={(e) => setTenderRef(e.target.value)}
-                  placeholder="GEM/2026/B/890123"
+                  placeholder="e.g. GEM/2026/B/890123"
                 />
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
               <div>
-                <label style={{ fontSize: "0.76rem", color: "var(--text-secondary)", fontWeight: 600 }}>
-                  GSTIN (15 characters)
-                </label>
+                <label className="ent-label">GSTIN Identifier (15 chars)</label>
                 <input
                   type="text"
                   className="ent-input"
                   value={gstin}
                   onChange={(e) => setGstin(e.target.value)}
-                  placeholder="27AAACT2727Q1ZW"
-                  maxLength={15}
+                  placeholder="e.g. 27AAACT2727Q1ZW"
                 />
               </div>
 
               <div>
-                <label style={{ fontSize: "0.76rem", color: "var(--text-secondary)", fontWeight: 600 }}>
-                  PAN (10 characters)
-                </label>
+                <label className="ent-label">PAN Number (10 chars)</label>
                 <input
                   type="text"
                   className="ent-input"
                   value={pan}
                   onChange={(e) => setPan(e.target.value)}
-                  placeholder="AAACT2727Q"
-                  maxLength={10}
+                  placeholder="e.g. AAACT2727Q"
                 />
               </div>
             </div>
 
             <div>
-              <label style={{ fontSize: "0.76rem", color: "var(--text-secondary)", fontWeight: 600 }}>
-                Udyam Registration Number (Optional)
-              </label>
+              <label className="ent-label">Udyam Registration (Optional MSME Certificate)</label>
               <input
                 type="text"
                 className="ent-input"
                 value={udyam}
                 onChange={(e) => setUdyam(e.target.value)}
-                placeholder="UDYAM-DL-01-0012345"
+                placeholder="e.g. UDYAM-DL-01-0012345 (Leave blank if not applicable)"
               />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "0.85rem" }}>
               <div>
-                <label style={{ fontSize: "0.76rem", color: "var(--text-secondary)", fontWeight: 600 }}>
-                  OEM Manufacturer Name
-                </label>
+                <label className="ent-label">OEM Manufacturer Name (Optional)</label>
                 <input
                   type="text"
                   className="ent-input"
                   value={oemName}
                   onChange={(e) => setOemName(e.target.value)}
-                  placeholder="Hewlett Packard Enterprise"
+                  placeholder="e.g. Hewlett Packard Enterprise"
                 />
               </div>
 
               <div>
-                <label style={{ fontSize: "0.76rem", color: "var(--text-secondary)", fontWeight: 600 }}>
-                  MAF Number
-                </label>
+                <label className="ent-label">MAF Authorization Code</label>
                 <input
                   type="text"
                   className="ent-input"
                   value={mafNumber}
                   onChange={(e) => setMafNumber(e.target.value)}
-                  placeholder="HPE-IND-MAF-2026-0045"
+                  placeholder="e.g. HPE-IND-MAF-2026-0045"
                 />
               </div>
             </div>
-          </div>
 
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: "0.6rem",
-              marginTop: "1.5rem",
-              paddingTop: "0.85rem",
-              borderTop: "1px solid var(--border-subtle)",
-            }}
-          >
-            <button
-              type="button"
-              className="ent-btn ent-btn-secondary"
-              onClick={onClose}
-              disabled={isLoading}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "0.6rem",
+                marginTop: "0.75rem",
+                paddingTop: "0.85rem",
+                borderTop: "1px solid var(--border-subtle)",
+              }}
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="ent-btn ent-btn-primary"
-              disabled={isLoading}
-            >
-              <Play size={13} /> {isLoading ? "Evaluating..." : "Run Evaluation"}
-            </button>
+              <button
+                type="button"
+                className="ent-btn ent-btn-secondary"
+                onClick={onClose}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="ent-btn ent-btn-primary"
+                disabled={isLoading}
+              >
+                <ShieldCheck size={15} />
+                <span>Execute Compliance Verification</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>

@@ -123,11 +123,11 @@ export default function AuditHistoryWorkspace() {
         }}
       >
         <div>
-          <h2 style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
-            Procurement Audit History
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
+            Review History
           </h2>
-          <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", marginTop: "2px" }}>
-            Official log of human officer compliance decisions, acknowledged findings, and audit trails.
+          <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "2px" }}>
+            Chronological record of officer review actions, acknowledged findings, and case notes.
           </p>
         </div>
 
@@ -138,7 +138,7 @@ export default function AuditHistoryWorkspace() {
             onClick={handlePrint}
           >
             <Printer size={14} />
-            <span>Print Audit Summary</span>
+            <span>Print Review Summary</span>
           </button>
         )}
       </div>

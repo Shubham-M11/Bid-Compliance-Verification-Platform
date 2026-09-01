@@ -37,6 +37,7 @@ import ComplianceChecksGrid from "./ComplianceChecksGrid";
 import CrossEntityTable from "./CrossEntityTable";
 import EvaluationDemoModal from "./EvaluationDemoModal";
 import EvidenceViewerDrawer from "./EvidenceViewerDrawer";
+import GovernmentPortalHero from "./GovernmentPortalHero";
 import ManualVerificationModal from "./ManualVerificationModal";
 import NewReviewWizard from "./NewReviewWizard";
 import OfficerDecisionPanel from "./OfficerDecisionPanel";
@@ -139,45 +140,46 @@ const FALLBACK_PRESETS: PresetComplianceScenario[] = [
     },
   },
   {
-    id: "scn_expired_oem_maf",
-    name: "Expired Authorization MAF (Cisco Systems)",
-    category: "Expired Authorization",
+    id: "scn_pan_gstin_mismatch",
+    name: "PAN-GSTIN Entity Discrepancy (Tata Consultancy)",
+    category: "Entity Mismatch",
     description:
-      "Deterministic detection of an expired MAF validity window where valid_until date has already passed relative to bid submission date.",
-    oem_request: {
-      oem_name: "Cisco Systems India Private Limited",
-      authorized_partner_name: "NexaTech Innovations LLP",
-      maf_number: "MAF-CSCO-2024-1100",
-      tender_ref_number: "GEM/2026/B/778899",
-      valid_from: "2024-01-01",
-      valid_until: "2024-12-31",
+      "Discrepancy where the middle 10 alphanumeric characters of the GSTIN (AAACT2727Q) do not match the submitted PAN card (AABCT9999P).",
+    gstin_request: {
+      gstin: "27AAACT2727Q1ZW",
+      expected_legal_name: "Tata Consultancy Services Limited",
+      expected_state_code: "27",
+    },
+    pan_request: {
+      pan: "AABCT9999P",
+      expected_legal_name: "Tata Consultancy Services Limited",
     },
   },
   {
-    id: "scn_unregistered_valid_format",
-    name: "Unregistered Valid Taxpayer (Ashok Leyland)",
-    category: "Registry Absence",
+    id: "scn_unregistered_valid",
+    name: "Valid Unregistered Taxpayer (Ashok Leyland Ltd)",
+    category: "Unindexed Taxpayer",
     description:
-      "Authentic Tamil Nadu GSTIN with valid Mod-36 checksum that is not present in the sandbox mock registry, verifying zero arbitrary penalty.",
+      "Taxpayer with structurally valid format and checksum that is not indexed in the active local mock registry, receiving zero arbitrary penalty.",
     gstin_request: {
-      gstin: "33AAACA6529K1ZQ",
+      gstin: "33AAACA1234A1Z5",
       expected_legal_name: "Ashok Leyland Limited",
       expected_state_code: "33",
     },
     pan_request: {
-      pan: "AAACA6529K",
+      pan: "AAACA1234A",
       expected_legal_name: "Ashok Leyland Limited",
     },
   },
 ];
 
 interface BidReviewWorkspaceProps {
-  onOpenDemoScenarios?: () => void;
   externalReview?: CompositeVerificationResponse | null;
   externalBidderName?: string;
   externalTenderRef?: string;
   initialTenderRef?: string;
   initialTenderTitle?: string;
+  onNavigateToTab?: (tab: "tenders" | "documents" | "audit") => void;
 }
 
 export default function BidReviewWorkspace({
@@ -186,87 +188,73 @@ export default function BidReviewWorkspace({
   externalTenderRef,
   initialTenderRef,
   initialTenderTitle,
+  onNavigateToTab,
 }: BidReviewWorkspaceProps) {
   const [presets, setPresets] = useState<PresetComplianceScenario[]>(FALLBACK_PRESETS);
   const [sampleBids, setSampleBids] = useState<SampleBidMetadata[]>([]);
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
-
-  // Initial State is genuine empty state (null)
   const [verificationResult, setVerificationResult] =
-    useState<CompositeVerificationResponse | null>(externalReview || null);
+    useState<CompositeVerificationResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Active Bid Info
-  const [activeBidderName, setActiveBidderName] = useState<string>(externalBidderName || "");
-  const [activeTenderRef, setActiveTenderRef] = useState<string>(
-    externalTenderRef || initialTenderRef || ""
-  );
-  const [activeTenderTitle, setActiveTenderTitle] = useState<string>(
-    initialTenderTitle || ""
-  );
+  // Active Bid Metadata
+  const [activeBidderName, setActiveBidderName] = useState<string>("");
+  const [activeTenderRef, setActiveTenderRef] = useState<string>("");
+  const [activeTenderTitle, setActiveTenderTitle] = useState<string>("");
   const [activeSubmissionDate, setActiveSubmissionDate] = useState<string>("");
 
-  useEffect(() => {
-    if (externalReview) {
-      setVerificationResult(externalReview);
-      if (externalBidderName) setActiveBidderName(externalBidderName);
-      if (externalTenderRef) setActiveTenderRef(externalTenderRef);
-    }
-  }, [externalReview, externalBidderName, externalTenderRef]);
-
   // Modals & Drawers
-  const [newReviewWizardOpen, setNewReviewWizardOpen] = useState<boolean>(false);
-  const [demoModalOpen, setDemoModalOpen] = useState<boolean>(false);
-  const [statutoryDrawerOpen, setStatutoryDrawerOpen] = useState<boolean>(false);
+  const [newReviewWizardOpen, setNewReviewWizardOpen] = useState(false);
+  const [demoModalOpen, setDemoModalOpen] = useState(false);
+  const [manualModalOpen, setManualModalOpen] = useState(false);
+  const [statutoryDrawerOpen, setStatutoryDrawerOpen] = useState(false);
   const [statutoryDrawerTab, setStatutoryDrawerTab] = useState<
     "gstin" | "pan" | "udyam" | "oem"
   >("gstin");
-  const [evidenceDrawerOpen, setEvidenceDrawerOpen] = useState<boolean>(false);
+  const [evidenceDrawerOpen, setEvidenceDrawerOpen] = useState(false);
   const [activeEvidence, setActiveEvidence] = useState<EvidenceItem | null>(null);
-  const [manualModalOpen, setManualModalOpen] = useState<boolean>(false);
 
-  // Load presets & sample bid metadata quietly in background without auto-running
+  // Load Presets & Sample Bids from backend on mount
   useEffect(() => {
-    async function loadMetadata() {
+    async function loadMeta() {
       try {
-        const remotePresets = await getCompliancePresets();
-        if (remotePresets && remotePresets.length > 0) {
-          setPresets(remotePresets);
-        }
-      } catch {
-        // Fallback already assigned
-      }
-
+        const p = await getCompliancePresets();
+        if (p && p.length > 0) setPresets(p);
+      } catch {}
       try {
-        const samples = await getSampleBids();
-        if (samples && samples.length > 0) {
-          setSampleBids(samples);
-        }
-      } catch {
-        // Graceful fallback
-      }
+        const s = await getSampleBids();
+        if (s && s.length > 0) setSampleBids(s);
+      } catch {}
     }
-    loadMetadata();
+    loadMeta();
   }, []);
 
-  const handleReviewCreatedFromWizard = (
-    result: CompositeVerificationResponse,
-    meta: { bidderName: string; tenderRefNumber: string; tenderTitle?: string }
-  ) => {
-    setActivePresetId(null);
-    setActiveBidderName(meta.bidderName);
-    setActiveTenderRef(meta.tenderRefNumber);
-    if (meta.tenderTitle) setActiveTenderTitle(meta.tenderTitle);
-    setActiveSubmissionDate(new Date().toISOString().split("T")[0]);
-    setVerificationResult(result);
-    setError(null);
-  };
+  // Handle external review injection
+  useEffect(() => {
+    if (externalReview) {
+      setVerificationResult(externalReview);
+      setActiveBidderName(externalBidderName || "Bidder Submission");
+      setActiveTenderRef(externalTenderRef || "GEM/2026/B/890123");
+      setActiveTenderTitle(initialTenderTitle || "Procurement Evaluation Context");
+      setActiveSubmissionDate(new Date().toISOString().split("T")[0]);
+      setError(null);
+    }
+  }, [externalReview, externalBidderName, externalTenderRef, initialTenderTitle]);
 
+  // Handle tender start context
+  useEffect(() => {
+    if (initialTenderRef) {
+      setActiveTenderRef(initialTenderRef);
+      if (initialTenderTitle) setActiveTenderTitle(initialTenderTitle);
+    }
+  }, [initialTenderRef, initialTenderTitle]);
+
+  // Run a preset scenario
   const runPreset = async (preset: PresetComplianceScenario) => {
-    setActivePresetId(preset.id);
     setIsLoading(true);
     setError(null);
+    setActivePresetId(preset.id);
 
     const bidder =
       preset.gstin_request?.expected_legal_name ||
@@ -274,77 +262,97 @@ export default function BidReviewWorkspace({
       preset.udyam_request?.expected_enterprise_name ||
       preset.oem_request?.authorized_partner_name ||
       "Bidder Submission";
-
-    const tender =
-      preset.oem_request?.tender_ref_number || "GEM/2026/B/890123";
+    const tender = preset.oem_request?.tender_ref_number || "GEM/2026/B/890123";
 
     setActiveBidderName(bidder);
     setActiveTenderRef(tender);
-    setActiveTenderTitle(preset.name);
+    setActiveTenderTitle("Enterprise Public Procurement Evaluation");
     setActiveSubmissionDate("2026-04-15");
 
-    const request: CompositeVerificationRequest = {
-      explicit_gstin: preset.gstin_request || undefined,
-      explicit_pan: preset.pan_request || undefined,
-      explicit_udyam: preset.udyam_request || undefined,
-      explicit_oem: preset.oem_request || undefined,
-      bid_metadata: {
-        tender_ref_number: tender,
-        expected_bidder_name: bidder,
-      },
-    };
-
     try {
-      const res = await verifyCompliance(request);
-      setVerificationResult(res);
+      const payload: CompositeVerificationRequest = {
+        explicit_gstin: preset.gstin_request || undefined,
+        explicit_pan: preset.pan_request || undefined,
+        explicit_udyam: preset.udyam_request || undefined,
+        explicit_oem: preset.oem_request || undefined,
+        bid_metadata: {
+          tender_ref_number: tender,
+          expected_bidder_name: bidder,
+          bid_submission_date: "2026-04-15",
+        },
+      };
+      const result = await verifyCompliance(payload);
+      setVerificationResult(result);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error executing compliance verification");
+      setError(
+        err instanceof Error ? err.message : "Failed to execute compliance verification"
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Run sample bid fixture
   const handleSelectSampleBid = async (sample: SampleBidMetadata) => {
-    setActivePresetId(null);
     setIsLoading(true);
     setError(null);
+    setActivePresetId(null);
     setActiveBidderName(sample.bidder_name);
     setActiveTenderRef(sample.tender_ref);
-    setActiveTenderTitle(sample.name);
+    setActiveTenderTitle("Enterprise Infrastructure Tender Evaluation");
     setActiveSubmissionDate(new Date().toISOString().split("T")[0]);
 
     try {
-      const res = await verifySampleBid(sample.sample_id);
-      setVerificationResult(res);
+      const result = await verifySampleBid(sample.sample_id);
+      setVerificationResult(result);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to process sample PDF document";
-      setError(msg);
+      setError(
+        err instanceof Error ? err.message : "Failed to evaluate sample bid document"
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Manual direct credentials submit
   const handleManualSubmit = async (request: CompositeVerificationRequest) => {
-    setActivePresetId(null);
-    setManualModalOpen(false);
     setIsLoading(true);
     setError(null);
+    setManualModalOpen(false);
 
-    setActiveBidderName(request.bid_metadata?.expected_bidder_name || "Custom Bid Submission");
-    setActiveTenderRef(request.bid_metadata?.tender_ref_number || "GEM/2026/B/999999");
-    setActiveTenderTitle("Custom Credentials Evaluation");
+    const bidder = request.bid_metadata?.expected_bidder_name || "Direct Submission";
+    const tender = request.bid_metadata?.tender_ref_number || "GEM/2026/B/MANUAL";
+    setActiveBidderName(bidder);
+    setActiveTenderRef(tender);
+    setActiveTenderTitle("Statutory Verification Evaluation");
     setActiveSubmissionDate(new Date().toISOString().split("T")[0]);
 
     try {
-      const res = await verifyCompliance(request);
-      setVerificationResult(res);
+      const result = await verifyCompliance(request);
+      setVerificationResult(result);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error executing compliance verification");
+      setError(
+        err instanceof Error ? err.message : "Failed to execute verification request"
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Callback from NewReviewWizard
+  const handleReviewCreatedFromWizard = (
+    result: CompositeVerificationResponse,
+    meta: { bidderName: string; tenderRefNumber: string; tenderTitle?: string }
+  ) => {
+    setVerificationResult(result);
+    setActiveBidderName(meta.bidderName);
+    setActiveTenderRef(meta.tenderRefNumber);
+    setActiveTenderTitle(meta.tenderTitle || "Public Procurement Tender Evaluation");
+    setActiveSubmissionDate(new Date().toISOString().split("T")[0]);
+    setError(null);
+  };
+
+  // Clear / Reset review
   const handleClearReview = () => {
     setVerificationResult(null);
     setActivePresetId(null);
@@ -357,8 +365,8 @@ export default function BidReviewWorkspace({
     setEvidenceDrawerOpen(false);
   };
 
-  const openStatutoryDrawer = (type: "gstin" | "pan" | "udyam" | "oem") => {
-    setStatutoryDrawerTab(type);
+  const openStatutoryDrawer = (tab: "gstin" | "pan" | "udyam" | "oem") => {
+    setStatutoryDrawerTab(tab);
     setStatutoryDrawerOpen(true);
   };
 
@@ -368,43 +376,52 @@ export default function BidReviewWorkspace({
   };
 
   return (
-    <div>
-      {/* Top Action Bar when Review is Active */}
+    <div style={{ display: "flex", flexDirection: "column", gap: verificationResult ? "1.5rem" : "0" }}>
+      {/* Top Action Bar (Visible when a review is active) */}
       {verificationResult && (
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: "1.25rem",
-            flexWrap: "wrap",
-            gap: "0.75rem",
+            padding: "0.75rem 1.25rem",
+            background: "var(--bg-primary)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: "var(--radius-sm)",
           }}
         >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+            <span className="ent-badge ent-badge-blue">
+              <ShieldCheck size={13} /> Active Case Review
+            </span>
+            <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>
+              {activeBidderName}
+            </span>
+            <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>·</span>
+            <span style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>
+              {activeTenderRef}
+            </span>
+          </div>
+
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <button
               type="button"
-              className="ent-btn ent-btn-primary"
+              className="ent-btn ent-btn-primary ent-btn-sm"
               onClick={() => setNewReviewWizardOpen(true)}
             >
-              <Plus size={14} /> New Compliance Review
+              <Plus size={13} />
+              <span>+ New Review</span>
             </button>
+
             <button
               type="button"
-              className="ent-btn ent-btn-secondary"
-              onClick={() => setDemoModalOpen(true)}
+              className="ent-btn ent-btn-secondary ent-btn-sm"
+              onClick={handleClearReview}
             >
-              <Layers size={14} color="var(--brand-blue)" /> Evaluation Scenarios
+              <RotateCcw size={13} />
+              <span>Reset Review</span>
             </button>
           </div>
-
-          <button
-            type="button"
-            className="ent-btn ent-btn-secondary ent-btn-sm"
-            onClick={handleClearReview}
-          >
-            <RotateCcw size={13} /> Reset Review
-          </button>
         </div>
       )}
 
@@ -415,18 +432,17 @@ export default function BidReviewWorkspace({
             padding: "0.75rem 1rem",
             background: "var(--status-critical-surface)",
             border: "1px solid var(--status-critical-border)",
-            borderRadius: "var(--radius-md)",
+            borderRadius: "var(--radius-sm)",
             color: "var(--status-critical-text)",
-            fontSize: "0.84rem",
+            fontSize: "0.86rem",
             display: "flex",
             alignItems: "center",
             gap: "0.5rem",
-            marginBottom: "1.25rem",
           }}
         >
           <AlertCircle size={16} />
           <span>
-            <strong>Evaluation Error: </strong> {error}
+            <strong>Evaluation Advisory: </strong> {error}
           </span>
         </div>
       )}
@@ -437,16 +453,27 @@ export default function BidReviewWorkspace({
           className="ent-card"
           style={{
             textAlign: "center",
-            padding: "3rem 2rem",
-            marginBottom: "1.5rem",
+            padding: "3.5rem 2rem",
           }}
         >
-          <Loader2 size={32} color="var(--brand-blue)" className="spin" style={{ margin: "0 auto 1rem auto" }} />
-          <h4 style={{ fontSize: "1rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.25rem" }}>
-            Executing Statutory Compliance Verification...
+          <Loader2
+            size={36}
+            color="var(--brand-blue)"
+            className="spin"
+            style={{ margin: "0 auto 1.25rem auto" }}
+          />
+          <h4
+            style={{
+              fontSize: "1.1rem",
+              fontWeight: 700,
+              color: "var(--text-primary)",
+              marginBottom: "0.35rem",
+            }}
+          >
+            Evaluating Statutory Compliance & Document Consistency...
           </h4>
-          <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-            Running offline Mod-36 checksums, PAN identity decoding, MAF temporal checks, and sandbox cross-verification.
+          <p style={{ fontSize: "0.86rem", color: "var(--text-secondary)", maxWidth: "560px", margin: "0 auto" }}>
+            Verifying statutory identifiers, registration statuses, and cross-document validity against tender criteria.
           </p>
         </div>
       )}
@@ -516,54 +543,12 @@ export default function BidReviewWorkspace({
         </>
       ) : (
         !isLoading && (
-          /* Genuine Clean Empty State */
-          <div
-            className="ent-card"
-            style={{
-              textAlign: "center",
-              padding: "4rem 2rem",
-              background: "var(--bg-primary)",
-              border: "1px dashed var(--border-subtle)",
-              borderRadius: "var(--radius-lg)",
-              marginTop: "1.5rem",
-            }}
-          >
-            <ShieldCheck size={52} color="var(--brand-blue)" style={{ margin: "0 auto 1.25rem auto" }} />
-            <h3 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.5rem", letterSpacing: "-0.01em" }}>
-              Start a Compliance Review
-            </h3>
-            <p style={{ fontSize: "0.86rem", color: "var(--text-secondary)", maxWidth: "540px", margin: "0 auto 1.75rem auto", lineHeight: 1.55 }}>
-              Upload a tender context and bidder submission document to begin deterministic statutory validation, cross-document consistency checks, and officer decision support.
-            </p>
-            <div style={{ display: "flex", justifyContent: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-              <button
-                type="button"
-                className="ent-btn ent-btn-primary ent-btn-lg"
-                onClick={() => setNewReviewWizardOpen(true)}
-              >
-                <Plus size={16} />
-                <span>+ New Compliance Review</span>
-              </button>
-
-              <button
-                type="button"
-                className="ent-btn ent-btn-secondary ent-btn-lg"
-                onClick={() => setDemoModalOpen(true)}
-              >
-                <Layers size={16} color="var(--brand-blue)" />
-                <span>Evaluation & Demo Mode</span>
-              </button>
-
-              <button
-                type="button"
-                className="ent-btn ent-btn-secondary ent-btn-lg"
-                onClick={() => setManualModalOpen(true)}
-              >
-                <FileText size={16} color="var(--text-muted)" />
-                <span>Enter Direct Credentials</span>
-              </button>
-            </div>
-          </div>
+          /* Institutional Government Portal Landing & Hero */
+          <GovernmentPortalHero
+            onStartNewReview={() => setNewReviewWizardOpen(true)}
+            onOpenDemoModal={() => setDemoModalOpen(true)}
+            onNavigateToTab={onNavigateToTab}
+          />
         )
       )}
 

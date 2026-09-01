@@ -103,8 +103,8 @@ export default function Home() {
   };
 
   return (
-    <main className="app-container">
-      {/* Primary Application Header */}
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      {/* 1. Full-Width Top Application Header (Spans 100% of browser viewport) */}
       <AppNavbar
         activeTab={activeTab}
         onSelectTab={setActiveTab}
@@ -112,60 +112,64 @@ export default function Home() {
         onOpenDiagnosticsModal={() => setDiagnosticsModalOpen(true)}
       />
 
-      {/* Main Tab 1: Reviews */}
-      <section
-        aria-label="Bid Compliance Review Workspace"
-        style={{ display: activeTab === "reviews" ? "block" : "none" }}
-      >
-        <BidReviewWorkspace
-          externalReview={externalReview}
-          externalBidderName={externalBidder}
-          externalTenderRef={externalTender}
-          initialTenderRef={targetTenderForReview?.ref}
-          initialTenderTitle={targetTenderForReview?.title}
+      {/* 2. Main Content Area */}
+      <main className="app-container" style={{ flex: 1 }}>
+        {/* Main Tab 1: Reviews */}
+        <section
+          aria-label="Bid Compliance Review Workspace"
+          style={{ display: activeTab === "reviews" ? "block" : "none" }}
+        >
+          <BidReviewWorkspace
+            externalReview={externalReview}
+            externalBidderName={externalBidder}
+            externalTenderRef={externalTender}
+            initialTenderRef={targetTenderForReview?.ref}
+            initialTenderTitle={targetTenderForReview?.title}
+            onNavigateToTab={(tab) => setActiveTab(tab)}
+          />
+        </section>
+
+        {/* Main Tab 2: Tenders */}
+        <section
+          aria-label="Tenders Catalog"
+          style={{ display: activeTab === "tenders" ? "block" : "none" }}
+        >
+          <TendersWorkspace onStartReviewForTender={handleStartReviewFromTender} />
+        </section>
+
+        {/* Main Tab 3: Documents */}
+        <section
+          aria-label="Documents Repository"
+          style={{ display: activeTab === "documents" ? "block" : "none" }}
+        >
+          <DocumentsWorkspace />
+        </section>
+
+        {/* Main Tab 4: Audit History */}
+        <section
+          aria-label="Procurement Audit History"
+          style={{ display: activeTab === "audit" ? "block" : "none" }}
+        >
+          <AuditHistoryWorkspace />
+        </section>
+
+        {/* Evaluation & Demo Scenarios Modal */}
+        <EvaluationDemoModal
+          isOpen={demoModalOpen}
+          onClose={() => setDemoModalOpen(false)}
+          presets={presets}
+          sampleBids={sampleBids}
+          onSelectPreset={handleSelectPresetFromModal}
+          onSelectSampleBid={handleSelectSampleFromModal}
+          isLoading={loadingDemo}
         />
-      </section>
 
-      {/* Main Tab 2: Tenders */}
-      <section
-        aria-label="Tenders Catalog"
-        style={{ display: activeTab === "tenders" ? "block" : "none" }}
-      >
-        <TendersWorkspace onStartReviewForTender={handleStartReviewFromTender} />
-      </section>
-
-      {/* Main Tab 3: Documents */}
-      <section
-        aria-label="Documents Repository"
-        style={{ display: activeTab === "documents" ? "block" : "none" }}
-      >
-        <DocumentsWorkspace />
-      </section>
-
-      {/* Main Tab 4: Audit History */}
-      <section
-        aria-label="Procurement Audit History"
-        style={{ display: activeTab === "audit" ? "block" : "none" }}
-      >
-        <AuditHistoryWorkspace />
-      </section>
-
-      {/* Evaluation & Demo Scenarios Modal */}
-      <EvaluationDemoModal
-        isOpen={demoModalOpen}
-        onClose={() => setDemoModalOpen(false)}
-        presets={presets}
-        sampleBids={sampleBids}
-        onSelectPreset={handleSelectPresetFromModal}
-        onSelectSampleBid={handleSelectSampleFromModal}
-        isLoading={loadingDemo}
-      />
-
-      {/* System Diagnostics Modal */}
-      <SystemDiagnosticsModal
-        isOpen={diagnosticsModalOpen}
-        onClose={() => setDiagnosticsModalOpen(false)}
-      />
-    </main>
+        {/* System Diagnostics Modal */}
+        <SystemDiagnosticsModal
+          isOpen={diagnosticsModalOpen}
+          onClose={() => setDiagnosticsModalOpen(false)}
+        />
+      </main>
+    </div>
   );
 }
