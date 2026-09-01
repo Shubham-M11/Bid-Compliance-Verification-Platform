@@ -29,101 +29,245 @@ export default function ComplianceChecksGrid({
   const udyam = bundle?.udyam;
   const oem = bundle?.oem;
 
-  // 1. GSTIN Card Data
-  const getGSTINStatus = () => {
-    if (!gstin) return { label: "Not Provided", class: "ent-badge-neutral", icon: HelpCircle };
+  // 1. GST Status & Explanation
+  const getGSTINInfo = () => {
+    if (!gstin || !gstin.gstin) {
+      return {
+        state: "NOT_PROVIDED",
+        badgeLabel: "Not Provided",
+        badgeClass: "ent-badge-neutral",
+        icon: HelpCircle,
+        explanation: "No GSTIN certificate was submitted.",
+      };
+    }
     if (gstin.registry.record?.status === "SUSPENDED") {
-      return { label: "Suspended", class: "ent-badge-critical", icon: AlertTriangle };
+      return {
+        state: "FAILED",
+        badgeLabel: "Suspended",
+        badgeClass: "ent-badge-critical",
+        icon: XCircle,
+        explanation: "Taxpayer registration is currently suspended in registry.",
+      };
     }
     if (gstin.registry.record?.status === "CANCELLED") {
-      return { label: "Cancelled", class: "ent-badge-critical", icon: XCircle };
+      return {
+        state: "FAILED",
+        badgeLabel: "Cancelled",
+        badgeClass: "ent-badge-critical",
+        icon: XCircle,
+        explanation: "Taxpayer GST registration has been cancelled.",
+      };
     }
-    if (!gstin.deterministic.is_checksum_valid || !gstin.deterministic.is_format_valid) {
-      return { label: "Invalid Format", class: "ent-badge-warning", icon: AlertTriangle };
+    if (!gstin.deterministic.is_checksum_valid) {
+      return {
+        state: "FAILED",
+        badgeLabel: "Failed",
+        badgeClass: "ent-badge-critical",
+        icon: XCircle,
+        explanation: "GST identification number checksum validation failed.",
+      };
+    }
+    if (!gstin.deterministic.is_format_valid) {
+      return {
+        state: "FAILED",
+        badgeLabel: "Failed",
+        badgeClass: "ent-badge-critical",
+        icon: XCircle,
+        explanation: "GSTIN format does not conform to statutory standards.",
+      };
     }
     if (gstin.registry.registry_found) {
-      return { label: "Verified Active", class: "ent-badge-success", icon: CheckCircle2 };
+      return {
+        state: "VERIFIED",
+        badgeLabel: "Verified",
+        badgeClass: "ent-badge-success",
+        icon: CheckCircle2,
+        explanation: "GSTIN structure, checksum and registry status verified.",
+      };
     }
-    return { label: "Valid Syntax", class: "ent-badge-blue", icon: CheckCircle2 };
+    return {
+      state: "VERIFIED",
+      badgeLabel: "Verified",
+      badgeClass: "ent-badge-success",
+      icon: CheckCircle2,
+      explanation: "Statutory format and checksum valid; verified without arbitrary penalty.",
+    };
   };
 
-  // 2. PAN Card Data
-  const getPANStatus = () => {
-    if (!pan) return { label: "Not Provided", class: "ent-badge-neutral", icon: HelpCircle };
+  // 2. PAN Status & Explanation
+  const getPANInfo = () => {
+    if (!pan || !pan.pan) {
+      return {
+        state: "NOT_PROVIDED",
+        badgeLabel: "Not Provided",
+        badgeClass: "ent-badge-neutral",
+        icon: HelpCircle,
+        explanation: "No PAN document was submitted.",
+      };
+    }
     if (!pan.deterministic.is_format_valid) {
-      return { label: "Invalid Format", class: "ent-badge-critical", icon: XCircle };
+      return {
+        state: "FAILED",
+        badgeLabel: "Failed",
+        badgeClass: "ent-badge-critical",
+        icon: XCircle,
+        explanation: "PAN structure does not conform to statutory 10-character format.",
+      };
     }
     if (pan.registry.registry_found) {
-      return { label: "Verified Active", class: "ent-badge-success", icon: CheckCircle2 };
+      return {
+        state: "VERIFIED",
+        badgeLabel: "Verified",
+        badgeClass: "ent-badge-success",
+        icon: CheckCircle2,
+        explanation: "PAN format, corporate entity classification, and active status verified.",
+      };
     }
-    return { label: "Valid Syntax", class: "ent-badge-blue", icon: CheckCircle2 };
+    return {
+      state: "VERIFIED",
+      badgeLabel: "Verified",
+      badgeClass: "ent-badge-success",
+      icon: CheckCircle2,
+      explanation: "PAN format and corporate entity classification checks passed.",
+    };
   };
 
-  // 3. Udyam Card Data
-  const getUdyamStatus = () => {
-    if (!udyam) return { label: "Not Provided", class: "ent-badge-neutral", icon: HelpCircle };
+  // 3. Udyam Status & Explanation
+  const getUdyamInfo = () => {
+    if (!udyam || !udyam.udyam_registration_number) {
+      return {
+        state: "NOT_PROVIDED",
+        badgeLabel: "Not Provided",
+        badgeClass: "ent-badge-neutral",
+        icon: HelpCircle,
+        explanation: "No Udyam certificate was submitted (Optional MSME claim).",
+      };
+    }
     if (!udyam.deterministic.is_format_valid) {
-      return { label: "Invalid Syntax", class: "ent-badge-critical", icon: XCircle };
+      return {
+        state: "FAILED",
+        badgeLabel: "Failed",
+        badgeClass: "ent-badge-critical",
+        icon: XCircle,
+        explanation: "Udyam registration number syntax is invalid.",
+      };
     }
     if (udyam.registry.record) {
       const tier = udyam.registry.record.enterprise_tier || "MSME";
-      return { label: `Verified (${tier})`, class: "ent-badge-success", icon: CheckCircle2 };
+      return {
+        state: "VERIFIED",
+        badgeLabel: `Verified (${tier})`,
+        badgeClass: "ent-badge-success",
+        icon: CheckCircle2,
+        explanation: `Active ${tier} enterprise verified; eligible for advisory EMD exemption.`,
+      };
     }
-    return { label: "Syntax Valid", class: "ent-badge-blue", icon: CheckCircle2 };
+    return {
+      state: "VERIFIED",
+      badgeLabel: "Verified",
+      badgeClass: "ent-badge-success",
+      icon: CheckCircle2,
+      explanation: "Udyam MSME registration format verified.",
+    };
   };
 
-  // 4. OEM Card Data
-  const getOEMStatus = () => {
-    if (!oem) return { label: "Not Provided", class: "ent-badge-neutral", icon: HelpCircle };
+  // 4. OEM Status & Explanation
+  const getOEMInfo = () => {
+    if (!oem || !oem.oem_name) {
+      return {
+        state: "NOT_PROVIDED",
+        badgeLabel: "Not Provided",
+        badgeClass: "ent-badge-neutral",
+        icon: HelpCircle,
+        explanation: "No OEM authorization document was submitted (Optional).",
+      };
+    }
     if (oem.deterministic.is_expired) {
-      return { label: "Expired", class: "ent-badge-critical", icon: XCircle };
+      return {
+        state: "FAILED",
+        badgeLabel: "Failed (Expired)",
+        badgeClass: "ent-badge-critical",
+        icon: XCircle,
+        explanation: "Manufacturer authorization validity window has expired.",
+      };
     }
     if (oem.registry.record?.authorization_status.includes("Revoked")) {
-      return { label: "Revoked", class: "ent-badge-critical", icon: XCircle };
+      return {
+        state: "FAILED",
+        badgeLabel: "Revoked",
+        badgeClass: "ent-badge-critical",
+        icon: XCircle,
+        explanation: "Manufacturer authorization revoked by original equipment manufacturer.",
+      };
     }
     if (oem.deterministic.is_valid_on_bid_date) {
-      return { label: "Valid Authorization", class: "ent-badge-success", icon: CheckCircle2 };
+      return {
+        state: "VERIFIED",
+        badgeLabel: "Verified",
+        badgeClass: "ent-badge-success",
+        icon: CheckCircle2,
+        explanation: "Manufacturer authorization verified and active for tender scope.",
+      };
     }
-    return { label: "Requires Review", class: "ent-badge-warning", icon: AlertTriangle };
+    return {
+      state: "WARNING",
+      badgeLabel: "Needs Review",
+      badgeClass: "ent-badge-warning",
+      icon: AlertTriangle,
+      explanation: "Manufacturer authorization requires manual officer inspection.",
+    };
   };
 
-  const gstinStatus = getGSTINStatus();
-  const panStatus = getPANStatus();
-  const udyamStatus = getUdyamStatus();
-  const oemStatus = getOEMStatus();
+  const gstinInfo = getGSTINInfo();
+  const panInfo = getPANInfo();
+  const udyamInfo = getUdyamInfo();
+  const oemInfo = getOEMInfo();
+
+  const GSTIcon = gstinInfo.icon;
+  const PANIcon = panInfo.icon;
+  const UdyamIcon = udyamInfo.icon;
+  const OEMIcon = oemInfo.icon;
 
   return (
     <div style={{ marginBottom: "1.75rem" }}>
+      {/* Section Title */}
       <div className="ent-section-title" style={{ marginBottom: "0.85rem" }}>
         <ShieldCheck size={18} color="var(--brand-blue)" />
-        Statutory & Authorization Credentials
+        <span>Compliance Overview</span>
       </div>
 
+      {/* 4-Column Responsive Grid */}
       <div className="statutory-grid">
-        {/* Card 1: GST Registration */}
+        {/* Card 1: GST */}
         <div className="statutory-card">
           <div>
             <div className="statutory-card-header">
               <div className="statutory-card-title">
                 <Building size={15} color="var(--brand-blue)" />
-                GST Registration
+                <span>GST</span>
               </div>
-              <span className={`ent-badge ${gstinStatus.class}`}>
-                <gstinStatus.icon size={11} /> {gstinStatus.label}
+              <span className={`ent-badge ${gstinInfo.badgeClass}`}>
+                <GSTIcon size={12} />
+                <span>{gstinInfo.badgeLabel}</span>
               </span>
             </div>
 
             <div style={{ marginTop: "0.6rem" }}>
-              <div className="statutory-card-fact">
-                {gstin?.gstin || "No GSTIN supplied"}
+              <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
+                {gstinInfo.explanation}
               </div>
-              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                {gstin?.registry.record?.legal_name
-                  ? gstin.registry.record.legal_name
-                  : gstin?.deterministic.state_name
-                  ? `${gstin.deterministic.state_name} (${gstin.deterministic.state_code})`
-                  : "State & syntax check"}
-              </div>
+              {gstin?.gstin && (
+                <div
+                  style={{
+                    fontSize: "0.72rem",
+                    color: "var(--text-muted)",
+                    fontFamily: "var(--font-mono)",
+                    marginTop: "0.35rem",
+                  }}
+                >
+                  GSTIN: {gstin.gstin}
+                </div>
+              )}
             </div>
           </div>
 
@@ -131,35 +275,43 @@ export default function ComplianceChecksGrid({
             type="button"
             className="ent-btn ent-btn-ghost ent-btn-sm"
             onClick={() => onOpenDetails("gstin")}
-            style={{ justifyContent: "space-between", paddingLeft: 0 }}
+            style={{ justifyContent: "space-between", paddingLeft: 0, marginTop: "0.6rem" }}
           >
             <span>View details</span>
             <ChevronRight size={13} />
           </button>
         </div>
 
-        {/* Card 2: PAN Entity */}
+        {/* Card 2: PAN */}
         <div className="statutory-card">
           <div>
             <div className="statutory-card-header">
               <div className="statutory-card-title">
                 <CreditCard size={15} color="var(--brand-blue)" />
-                PAN Verification
+                <span>PAN</span>
               </div>
-              <span className={`ent-badge ${panStatus.class}`}>
-                <panStatus.icon size={11} /> {panStatus.label}
+              <span className={`ent-badge ${panInfo.badgeClass}`}>
+                <PANIcon size={12} />
+                <span>{panInfo.badgeLabel}</span>
               </span>
             </div>
 
             <div style={{ marginTop: "0.6rem" }}>
-              <div className="statutory-card-fact">
-                {pan?.pan || "No PAN supplied"}
+              <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
+                {panInfo.explanation}
               </div>
-              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                {pan?.deterministic.entity_type
-                  ? `Entity: ${pan.deterministic.entity_type}`
-                  : "Structure & 4th char decoded"}
-              </div>
+              {pan?.pan && (
+                <div
+                  style={{
+                    fontSize: "0.72rem",
+                    color: "var(--text-muted)",
+                    fontFamily: "var(--font-mono)",
+                    marginTop: "0.35rem",
+                  }}
+                >
+                  PAN: {pan.pan}
+                </div>
+              )}
             </div>
           </div>
 
@@ -167,35 +319,43 @@ export default function ComplianceChecksGrid({
             type="button"
             className="ent-btn ent-btn-ghost ent-btn-sm"
             onClick={() => onOpenDetails("pan")}
-            style={{ justifyContent: "space-between", paddingLeft: 0 }}
+            style={{ justifyContent: "space-between", paddingLeft: 0, marginTop: "0.6rem" }}
           >
             <span>View details</span>
             <ChevronRight size={13} />
           </button>
         </div>
 
-        {/* Card 3: Udyam Registration */}
+        {/* Card 3: Udyam */}
         <div className="statutory-card">
           <div>
             <div className="statutory-card-header">
               <div className="statutory-card-title">
                 <Factory size={15} color="var(--brand-blue)" />
-                Udyam MSME
+                <span>Udyam</span>
               </div>
-              <span className={`ent-badge ${udyamStatus.class}`}>
-                <udyamStatus.icon size={11} /> {udyamStatus.label}
+              <span className={`ent-badge ${udyamInfo.badgeClass}`}>
+                <UdyamIcon size={12} />
+                <span>{udyamInfo.badgeLabel}</span>
               </span>
             </div>
 
             <div style={{ marginTop: "0.6rem" }}>
-              <div className="statutory-card-fact">
-                {udyam?.udyam_registration_number || "Not Claimed / Provided"}
+              <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
+                {udyamInfo.explanation}
               </div>
-              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                {udyam?.registry.record
-                  ? `${udyam.registry.record.enterprise_tier} • ${udyam.registry.record.major_activity}`
-                  : "Advisory EMD waiver check"}
-              </div>
+              {udyam?.udyam_registration_number && (
+                <div
+                  style={{
+                    fontSize: "0.72rem",
+                    color: "var(--text-muted)",
+                    fontFamily: "var(--font-mono)",
+                    marginTop: "0.35rem",
+                  }}
+                >
+                  {udyam.udyam_registration_number}
+                </div>
+              )}
             </div>
           </div>
 
@@ -203,37 +363,45 @@ export default function ComplianceChecksGrid({
             type="button"
             className="ent-btn ent-btn-ghost ent-btn-sm"
             onClick={() => onOpenDetails("udyam")}
-            style={{ justifyContent: "space-between", paddingLeft: 0 }}
+            style={{ justifyContent: "space-between", paddingLeft: 0, marginTop: "0.6rem" }}
           >
             <span>View details</span>
             <ChevronRight size={13} />
           </button>
         </div>
 
-        {/* Card 4: OEM Authorization */}
+        {/* Card 4: OEM */}
         <div className="statutory-card">
           <div>
             <div className="statutory-card-header">
               <div className="statutory-card-title">
                 <FileCheck2 size={15} color="var(--brand-blue)" />
-                OEM Authorization
+                <span>OEM</span>
               </div>
-              <span className={`ent-badge ${oemStatus.class}`}>
-                <oemStatus.icon size={11} /> {oemStatus.label}
+              <span className={`ent-badge ${oemInfo.badgeClass}`}>
+                <OEMIcon size={12} />
+                <span>{oemInfo.badgeLabel}</span>
               </span>
             </div>
 
             <div style={{ marginTop: "0.6rem" }}>
-              <div className="statutory-card-fact" style={{ fontSize: "0.76rem" }}>
-                {oem?.oem_name ? oem.oem_name.split(" ")[0] + " MAF" : "No MAF supplied"}
+              <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
+                {oemInfo.explanation}
               </div>
-              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                {oem?.deterministic.days_until_expiry !== undefined && oem?.deterministic.days_until_expiry !== null
-                  ? oem.deterministic.is_expired
-                    ? `Expired ${oem.deterministic.days_until_expiry}d ago`
-                    : `Valid (${oem.deterministic.days_until_expiry}d left)`
-                  : "Partner standing check"}
-              </div>
+              {oem?.oem_name && (
+                <div
+                  style={{
+                    fontSize: "0.72rem",
+                    color: "var(--text-muted)",
+                    marginTop: "0.35rem",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {oem.oem_name}
+                </div>
+              )}
             </div>
           </div>
 
@@ -241,7 +409,7 @@ export default function ComplianceChecksGrid({
             type="button"
             className="ent-btn ent-btn-ghost ent-btn-sm"
             onClick={() => onOpenDetails("oem")}
-            style={{ justifyContent: "space-between", paddingLeft: 0 }}
+            style={{ justifyContent: "space-between", paddingLeft: 0, marginTop: "0.6rem" }}
           >
             <span>View details</span>
             <ChevronRight size={13} />

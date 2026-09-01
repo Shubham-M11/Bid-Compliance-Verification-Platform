@@ -57,7 +57,7 @@ export default function StatutoryDetailsDrawer({
         {/* Header */}
         <div className="drawer-header">
           <div>
-            <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#ffffff" }}>
+            <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)" }}>
               Statutory Verification Details
             </h3>
             <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
@@ -880,7 +880,19 @@ export default function StatutoryDetailsDrawer({
         </div>
 
         {/* Footer */}
-        <div className="drawer-footer">
+        <div
+          className="drawer-footer"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "0.5rem",
+          }}
+        >
+          <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)" }}>
+            Verification source: <strong style={{ color: "var(--brand-blue)" }}>Deterministic validation + sandbox registry</strong>
+          </div>
           <button type="button" className="ent-btn ent-btn-secondary" onClick={onClose}>
             Close
           </button>

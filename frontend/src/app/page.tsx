@@ -1,109 +1,171 @@
 "use client";
 
 import React, { useState } from "react";
+import AppNavbar, { NavTabType } from "@/components/AppNavbar";
+import SystemDiagnosticsModal from "@/components/admin/SystemDiagnosticsModal";
+import AuditHistoryWorkspace from "@/components/audit/AuditHistoryWorkspace";
 import BidReviewWorkspace from "@/components/compliance/BidReviewWorkspace";
-import DocumentUploadCard from "@/components/DocumentUploadCard";
-import SystemStatusView from "@/components/SystemStatusView";
+import EvaluationDemoModal from "@/components/compliance/EvaluationDemoModal";
+import DocumentsWorkspace from "@/components/documents/DocumentsWorkspace";
+import TendersWorkspace from "@/components/tenders/TendersWorkspace";
 import {
-  Activity,
-  CheckCircle,
-  FileCheck2,
-  FileSearch,
-  FileText,
-  Layers,
-  Server,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
-
-type MainNavTab = "reviews" | "documents" | "status";
+  getCompliancePresets,
+  getSampleBids,
+  verifyCompliance,
+  verifySampleBid,
+} from "@/services/api";
+import type {
+  CompositeVerificationResponse,
+  PresetComplianceScenario,
+  SampleBidMetadata,
+} from "@/services/types/compliance";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<MainNavTab>("reviews");
+  const [activeTab, setActiveTab] = useState<NavTabType>("reviews");
+  const [demoModalOpen, setDemoModalOpen] = useState(false);
+  const [diagnosticsModalOpen, setDiagnosticsModalOpen] = useState(false);
+  const [presets, setPresets] = useState<PresetComplianceScenario[]>([]);
+  const [sampleBids, setSampleBids] = useState<SampleBidMetadata[]>([]);
+  const [targetTenderForReview, setTargetTenderForReview] = useState<{
+    ref: string;
+    title: string;
+  } | null>(null);
+
+  const [externalReview, setExternalReview] =
+    useState<CompositeVerificationResponse | null>(null);
+  const [externalBidder, setExternalBidder] = useState<string>("");
+  const [externalTender, setExternalTender] = useState<string>("");
+  const [loadingDemo, setLoadingDemo] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    async function loadMeta() {
+      try {
+        const p = await getCompliancePresets();
+        if (p) setPresets(p);
+      } catch {}
+      try {
+        const s = await getSampleBids();
+        if (s) setSampleBids(s);
+      } catch {}
+    }
+    loadMeta();
+  }, []);
+
+  const handleStartReviewFromTender = (tenderRef: string, tenderTitle: string) => {
+    setTargetTenderForReview({ ref: tenderRef, title: tenderTitle });
+    setActiveTab("reviews");
+  };
+
+  const handleSelectPresetFromModal = async (preset: PresetComplianceScenario) => {
+    setLoadingDemo(true);
+    const bidder =
+      preset.gstin_request?.expected_legal_name ||
+      preset.pan_request?.expected_legal_name ||
+      preset.udyam_request?.expected_enterprise_name ||
+      preset.oem_request?.authorized_partner_name ||
+      "Bidder Submission";
+    const tender = preset.oem_request?.tender_ref_number || "GEM/2026/B/890123";
+
+    try {
+      const res = await verifyCompliance({
+        explicit_gstin: preset.gstin_request || undefined,
+        explicit_pan: preset.pan_request || undefined,
+        explicit_udyam: preset.udyam_request || undefined,
+        explicit_oem: preset.oem_request || undefined,
+        bid_metadata: { tender_ref_number: tender, expected_bidder_name: bidder },
+      });
+      setExternalReview(res);
+      setExternalBidder(bidder);
+      setExternalTender(tender);
+      setActiveTab("reviews");
+      setDemoModalOpen(false);
+    } catch {
+      // Handled gracefully
+    } finally {
+      setLoadingDemo(false);
+    }
+  };
+
+  const handleSelectSampleFromModal = async (sample: SampleBidMetadata) => {
+    setLoadingDemo(true);
+    try {
+      const res = await verifySampleBid(sample.sample_id);
+      setExternalReview(res);
+      setExternalBidder(sample.bidder_name);
+      setExternalTender(sample.tender_ref);
+      setActiveTab("reviews");
+      setDemoModalOpen(false);
+    } catch {
+      // Handled gracefully
+    } finally {
+      setLoadingDemo(false);
+    }
+  };
 
   return (
     <main className="app-container">
-      {/* Top Application Navbar */}
-      <header className="top-navbar">
-        <div className="brand-section">
-          <div className="brand-icon-box">
-            <ShieldCheck size={20} />
-          </div>
-          <div>
-            <h1 className="brand-heading">
-              GeM Bid Compliance
-            </h1>
-            <p className="brand-tagline">
-              Procurement Decision Support System
-            </p>
-          </div>
-        </div>
+      {/* Primary Application Header */}
+      <AppNavbar
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        onOpenDemoModal={() => setDemoModalOpen(true)}
+        onOpenDiagnosticsModal={() => setDiagnosticsModalOpen(true)}
+      />
 
-        {/* Center Navigation Tabs */}
-        <nav className="nav-links">
-          <button
-            type="button"
-            className={`nav-tab-btn ${activeTab === "reviews" ? "active" : ""}`}
-            onClick={() => setActiveTab("reviews")}
-          >
-            <ShieldCheck size={14} /> Bid Reviews
-          </button>
-          <button
-            type="button"
-            className={`nav-tab-btn ${activeTab === "documents" ? "active" : ""}`}
-            onClick={() => setActiveTab("documents")}
-          >
-            <FileText size={14} /> Document Extraction
-          </button>
-          <button
-            type="button"
-            className={`nav-tab-btn ${activeTab === "status" ? "active" : ""}`}
-            onClick={() => setActiveTab("status")}
-          >
-            <Server size={14} /> System Status
-          </button>
-        </nav>
+      {/* Main Tab 1: Reviews */}
+      <section
+        aria-label="Bid Compliance Review Workspace"
+        style={{ display: activeTab === "reviews" ? "block" : "none" }}
+      >
+        <BidReviewWorkspace
+          externalReview={externalReview}
+          externalBidderName={externalBidder}
+          externalTenderRef={externalTender}
+          initialTenderRef={targetTenderForReview?.ref}
+          initialTenderTitle={targetTenderForReview?.title}
+        />
+      </section>
 
-        {/* Right Status Pill */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <span className="ent-badge ent-badge-neutral" style={{ fontSize: "0.72rem" }}>
-            Deterministic Sandbox
-          </span>
-        </div>
-      </header>
+      {/* Main Tab 2: Tenders */}
+      <section
+        aria-label="Tenders Catalog"
+        style={{ display: activeTab === "tenders" ? "block" : "none" }}
+      >
+        <TendersWorkspace onStartReviewForTender={handleStartReviewFromTender} />
+      </section>
 
-      {/* Main Tab Views */}
-      {activeTab === "reviews" && (
-        <div>
-          <div style={{ marginBottom: "1.25rem" }}>
-            <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#ffffff", letterSpacing: "-0.01em" }}>
-              Bid Compliance Review
-            </h2>
-            <p style={{ fontSize: "0.84rem", color: "var(--text-secondary)" }}>
-              Review statutory credentials, authorization documents, and bid compliance evidence.
-            </p>
-          </div>
+      {/* Main Tab 3: Documents */}
+      <section
+        aria-label="Documents Repository"
+        style={{ display: activeTab === "documents" ? "block" : "none" }}
+      >
+        <DocumentsWorkspace />
+      </section>
 
-          <BidReviewWorkspace />
-        </div>
-      )}
+      {/* Main Tab 4: Audit History */}
+      <section
+        aria-label="Procurement Audit History"
+        style={{ display: activeTab === "audit" ? "block" : "none" }}
+      >
+        <AuditHistoryWorkspace />
+      </section>
 
-      {activeTab === "documents" && (
-        <div>
-          <div style={{ marginBottom: "1.25rem" }}>
-            <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#ffffff", letterSpacing: "-0.01em" }}>
-              Document Processing & Page Evidence Extraction
-            </h2>
-            <p style={{ fontSize: "0.84rem", color: "var(--text-secondary)" }}>
-              Extract page-by-page text evidence using digital parser with automated OCR fallback.
-            </p>
-          </div>
+      {/* Evaluation & Demo Scenarios Modal */}
+      <EvaluationDemoModal
+        isOpen={demoModalOpen}
+        onClose={() => setDemoModalOpen(false)}
+        presets={presets}
+        sampleBids={sampleBids}
+        onSelectPreset={handleSelectPresetFromModal}
+        onSelectSampleBid={handleSelectSampleFromModal}
+        isLoading={loadingDemo}
+      />
 
-          <DocumentUploadCard />
-        </div>
-      )}
-
-      {activeTab === "status" && <SystemStatusView />}
+      {/* System Diagnostics Modal */}
+      <SystemDiagnosticsModal
+        isOpen={diagnosticsModalOpen}
+        onClose={() => setDiagnosticsModalOpen(false)}
+      />
     </main>
   );
 }

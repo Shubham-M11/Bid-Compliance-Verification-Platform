@@ -8,6 +8,7 @@ import {
   ChevronUp,
   FileCheck,
   FileSearch,
+  FileText,
   HelpCircle,
   Link2,
   XCircle,
@@ -34,8 +35,11 @@ export default function CrossEntityTable({
   };
 
   const passCount = checks.filter((c) => c.status === "PASS").length;
-  const warnCount = checks.filter((c) => c.status === "WARNING" || c.status === "REVIEW_REQUIRED").length;
+  const warnCount = checks.filter(
+    (c) => c.status === "WARNING" || c.status === "REVIEW_REQUIRED"
+  ).length;
   const failCount = checks.filter((c) => c.status === "FAIL").length;
+  const naCount = checks.filter((c) => c.status === "NOT_APPLICABLE").length;
 
   const getStatusBadge = (status: CheckStatus) => {
     switch (status) {
@@ -49,7 +53,7 @@ export default function CrossEntityTable({
       case "REVIEW_REQUIRED":
         return (
           <span className="ent-badge ent-badge-warning">
-            <AlertTriangle size={11} /> Review
+            <AlertTriangle size={11} /> Needs Review
           </span>
         );
       case "FAIL":
@@ -61,7 +65,7 @@ export default function CrossEntityTable({
       case "NOT_APPLICABLE":
         return (
           <span className="ent-badge ent-badge-neutral">
-            <HelpCircle size={11} /> N/A
+            <HelpCircle size={11} /> Not Applicable
           </span>
         );
       default:
@@ -71,39 +75,50 @@ export default function CrossEntityTable({
 
   return (
     <div className="ent-card" style={{ marginBottom: "1.75rem" }}>
+      {/* Section Header */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: "1rem",
+          flexWrap: "wrap",
+          gap: "0.75rem",
         }}
       >
         <div>
           <div className="ent-section-title">
             <Link2 size={18} color="var(--brand-blue)" />
-            Cross-Entity Relational Consistency
+            <span>Cross-Document Consistency Checks</span>
           </div>
           <p className="ent-section-subtitle">
-            Automated cross-document identity, temporal validity, and tender linkage verification.
+            Relational verification across PAN, GSTIN, legal names, OEM authorizations, and tender validity.
           </p>
         </div>
 
         <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
           <span className="ent-badge ent-badge-success">{passCount} Passed</span>
-          {warnCount > 0 && <span className="ent-badge ent-badge-warning">{warnCount} Review</span>}
-          {failCount > 0 && <span className="ent-badge ent-badge-critical">{failCount} Failed</span>}
+          {warnCount > 0 && (
+            <span className="ent-badge ent-badge-warning">{warnCount} Needs Review</span>
+          )}
+          {failCount > 0 && (
+            <span className="ent-badge ent-badge-critical">{failCount} Failed</span>
+          )}
+          {naCount > 0 && (
+            <span className="ent-badge ent-badge-neutral">{naCount} N/A</span>
+          )}
         </div>
       </div>
 
+      {/* Rules Table */}
       <div style={{ overflowX: "auto" }}>
         <table className="consistency-table">
           <thead>
             <tr>
-              <th>Verification Check</th>
-              <th>Category</th>
-              <th>Status</th>
-              <th style={{ textAlign: "right" }}>Details</th>
+              <th style={{ width: "90px" }}>Rule ID</th>
+              <th>Consistency Check</th>
+              <th style={{ width: "160px" }}>Result</th>
+              <th style={{ textAlign: "right", width: "80px" }}>Details</th>
             </tr>
           </thead>
           <tbody>
@@ -115,17 +130,34 @@ export default function CrossEntityTable({
                   <tr
                     className="consistency-row"
                     onClick={() => toggleRow(check.rule_id)}
+                    style={{ cursor: "pointer" }}
                   >
                     <td>
-                      <div style={{ fontWeight: 600, color: "#ffffff" }}>
+                      <span
+                        style={{
+                          fontSize: "0.78rem",
+                          fontFamily: "var(--font-mono)",
+                          fontWeight: 700,
+                          color: "var(--brand-blue)",
+                        }}
+                      >
+                        {check.rule_id}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>
                         {check.rule_name}
                       </div>
-                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "1px" }}>
+                      <div
+                        style={{
+                          fontSize: "0.78rem",
+                          color: "var(--text-secondary)",
+                          marginTop: "2px",
+                          lineHeight: 1.4,
+                        }}
+                      >
                         {check.summary}
                       </div>
-                    </td>
-                    <td style={{ color: "var(--text-secondary)", fontSize: "0.78rem" }}>
-                      {check.category}
                     </td>
                     <td>{getStatusBadge(check.status)}</td>
                     <td style={{ textAlign: "right", color: "var(--text-muted)" }}>
@@ -135,63 +167,105 @@ export default function CrossEntityTable({
 
                   {isExpanded && (
                     <tr>
-                      <td colSpan={4} style={{ background: "var(--bg-app)", padding: "1rem 1.25rem" }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ fontSize: "0.78rem", color: "var(--brand-blue)", fontWeight: 600 }}>
-                              Rule Citation: {check.rule_id}
+                      <td
+                        colSpan={4}
+                        style={{
+                          background: "var(--bg-app)",
+                          padding: "1.1rem 1.4rem",
+                          borderTop: "1px solid var(--border-subtle)",
+                          borderBottom: "1px solid var(--border-subtle)",
+                        }}
+                      >
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              flexWrap: "wrap",
+                              gap: "0.5rem",
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: "0.8rem",
+                                color: "var(--text-primary)",
+                                fontWeight: 700,
+                              }}
+                            >
+                              Verification Rule: {check.rule_id} — {check.rule_name}
                             </span>
-                            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                              Severity: {check.severity}
+                            <span
+                              style={{
+                                fontSize: "0.74rem",
+                                color: "var(--text-muted)",
+                              }}
+                            >
+                              Category: {check.category}
                             </span>
                           </div>
 
-                          <p style={{ fontSize: "0.82rem", color: "#cbd5e1", lineHeight: 1.45 }}>
+                          <p
+                            style={{
+                              fontSize: "0.82rem",
+                              color: "var(--text-secondary)",
+                              lineHeight: 1.5,
+                              margin: 0,
+                            }}
+                          >
                             {check.summary}
                           </p>
 
-                          {check.evidence && check.evidence.length > 0 && (
-                            <div style={{ marginTop: "0.4rem" }}>
-                              <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "0.3rem" }}>
-                                Linked Audit Evidence:
+                          {/* Linked Evidence Citation */}
+                          {check.evidence && check.evidence.length > 0 && onInspectEvidence && (
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                marginTop: "0.4rem",
+                                paddingTop: "0.6rem",
+                                borderTop: "1px solid var(--border-subtle)",
+                                flexWrap: "wrap",
+                                gap: "0.5rem",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "0.4rem",
+                                  fontSize: "0.75rem",
+                                  color: "var(--text-muted)",
+                                }}
+                              >
+                                <FileText size={13} color="var(--brand-blue)" />
+                                <span>Evidence:</span>
+                                {check.evidence.map((ev, evIdx) => (
+                                  <span
+                                    key={evIdx}
+                                    style={{
+                                      color: "var(--text-primary)",
+                                      fontWeight: 500,
+                                    }}
+                                  >
+                                    {ev.filename || "Bid Document"} {ev.page_number ? `(p. ${ev.page_number})` : ""}
+                                    {evIdx < check.evidence.length - 1 ? ", " : ""}
+                                  </span>
+                                ))}
                               </div>
-                              {check.evidence.map((ev, evIdx) => (
-                                <div
-                                  key={ev.evidence_id || evIdx}
-                                  style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    background: "var(--bg-surface)",
-                                    padding: "0.5rem 0.75rem",
-                                    borderRadius: "var(--radius-xs)",
-                                    fontSize: "0.78rem",
-                                    marginBottom: "0.35rem",
-                                  }}
-                                >
-                                  <div>
-                                    <span style={{ color: "#ffffff", fontWeight: 500 }}>{ev.field_name}: </span>
-                                    <span style={{ color: "var(--text-secondary)" }}>{ev.finding_description}</span>
-                                    {ev.filename && (
-                                      <span style={{ color: "var(--text-muted)", marginLeft: "0.5rem" }}>
-                                        ({ev.filename}{ev.page_number ? ` · p.${ev.page_number}` : ""})
-                                      </span>
-                                    )}
-                                  </div>
-                                  {onInspectEvidence && (
-                                    <button
-                                      type="button"
-                                      className="ent-btn ent-btn-ghost ent-btn-sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        onInspectEvidence(ev);
-                                      }}
-                                    >
-                                      <FileSearch size={12} /> Inspect
-                                    </button>
-                                  )}
-                                </div>
-                              ))}
+
+                              <button
+                                type="button"
+                                className="ent-btn ent-btn-secondary ent-btn-sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onInspectEvidence(check.evidence[0]);
+                                }}
+                              >
+                                <FileSearch size={12} color="var(--brand-blue)" />
+                                <span>Inspect Evidence</span>
+                              </button>
                             </div>
                           )}
                         </div>
