@@ -314,4 +314,26 @@ MOCK_OEM_DB: List[OEMRegistryRecord] = [
         product_categories=["Client Solutions", "Workstations"],
         notes="Partner authorization revoked in 2025 due to compliance default.",
     ),
+    # 4. Juniper Networks active partner
+    OEMRegistryRecord(
+        oem_name="JUNIPER NETWORKS INDIA PRIVATE LIMITED",
+        authorized_partner_name="NEXATECH INNOVATIONS LLP",
+        maf_number="JUN-MAF-2026-3321",
+        is_officially_recognized_oem=True,
+        is_partner_in_oem_database=True,
+        authorization_status="Active Select Partner",
+        product_categories=["Routing", "Switching", "AI-Native Networking"],
+        notes="Authorized for Government of India tender procurement.",
+    ),
+    # 5. Microsoft active partner
+    OEMRegistryRecord(
+        oem_name="MICROSOFT CORPORATION INDIA PRIVATE LIMITED",
+        authorized_partner_name="INFOSYS LIMITED",
+        maf_number="MSFT-MAF-2026-7788",
+        is_officially_recognized_oem=True,
+        is_partner_in_oem_database=True,
+        authorization_status="Active Gold Cloud Partner",
+        product_categories=["Azure Cloud Solutions", "Enterprise Software", "M365 Licensing"],
+        notes="Direct Tier-1 Enterprise Agreement partner.",
+    ),
 ]

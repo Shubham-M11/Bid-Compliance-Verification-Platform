@@ -700,67 +700,177 @@ export default function StatutoryDetailsDrawer({
             <div>
               {!oem ? (
                 <div style={{ color: "var(--text-muted)", fontSize: "0.85rem", textAlign: "center", padding: "2rem 0" }}>
-                  No OEM Authorization Form submitted.
+                  No OEM Authorization Form submitted for this bid.
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-                  <div className="ent-card" style={{ background: "var(--bg-surface)" }}>
+                  {/* Visual 6-Part MAF Breakdown */}
+                  <div className="ent-card" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}>
                     <div className="ent-section-title" style={{ fontSize: "0.85rem", marginBottom: "0.75rem" }}>
                       <Cpu size={15} color="var(--brand-blue)" />
-                      MAF Temporal & Partner Validity
+                      Manufacturer Authorization Form (MAF) Breakdown
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.82rem" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>Manufacturer</span>
+
+                    {/* Segment Badges */}
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "0.4rem",
+                        padding: "0.75rem",
+                        background: "var(--bg-app)",
+                        borderRadius: "var(--radius-md)",
+                        border: "1px solid var(--border-subtle)",
+                        marginBottom: "0.85rem",
+                        fontFamily: "monospace",
+                        fontSize: "0.85rem",
+                        fontWeight: 700,
+                      }}
+                    >
+                      <div style={{ padding: "0.35rem 0.55rem", background: "rgba(59, 130, 246, 0.15)", border: "1px solid rgba(59, 130, 246, 0.3)", borderRadius: "var(--radius-sm)", color: "#93c5fd", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 500 }}>MAF Ref</div>
+                        <div>{oem.maf_number || "NOT_SPECIFIED"}</div>
+                      </div>
+                      <div style={{ padding: "0.35rem 0.55rem", background: "rgba(168, 85, 247, 0.15)", border: "1px solid rgba(168, 85, 247, 0.3)", borderRadius: "var(--radius-sm)", color: "#c084fc", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 500 }}>Manufacturer</div>
+                        <div>{oem.oem_name.split(" ")[0] || "OEM"}</div>
+                      </div>
+                      <div style={{ padding: "0.35rem 0.55rem", background: "rgba(34, 197, 94, 0.15)", border: "1px solid rgba(34, 197, 94, 0.3)", borderRadius: "var(--radius-sm)", color: "#86efac", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 500 }}>Partner / Bidder</div>
+                        <div>{oem.authorized_partner_name.split(" ")[0] || "Partner"}</div>
+                      </div>
+                      <div style={{ padding: "0.35rem 0.55rem", background: "rgba(234, 179, 8, 0.15)", border: "1px solid rgba(234, 179, 8, 0.3)", borderRadius: "var(--radius-sm)", color: "#fde047", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 500 }}>Validity Standing</div>
+                        <div>
+                          {oem.deterministic.is_expired
+                            ? "EXPIRED"
+                            : oem.deterministic.is_valid_on_bid_date
+                            ? "ACTIVE"
+                            : "INVALID"}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Segment Details Table */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem", fontSize: "0.8rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>Manufacturer / OEM Entity</span>
                         <span style={{ color: "#ffffff", fontWeight: 600 }}>{oem.oem_name}</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>Authorized Partner</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>Authorized Partner / Bidder</span>
                         <span style={{ color: "#93c5fd", fontWeight: 600 }}>{oem.authorized_partner_name}</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>MAF Reference Number</span>
-                        <code style={{ color: "#cbd5e1" }}>{oem.maf_number || "Not Specified"}</code>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>MAF Certificate Reference</span>
+                        <code style={{ color: "#cbd5e1" }}>{oem.maf_number || "Not Specified in Document"}</code>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>Validity Status</span>
+                      {oem.deterministic.structure_breakdown?.tender_reference && (
+                        <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                          <span style={{ color: "var(--text-secondary)" }}>Linked Tender Reference</span>
+                          <span style={{ color: "#cbd5e1" }}>{oem.deterministic.structure_breakdown.tender_reference}</span>
+                        </div>
+                      )}
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>Temporal Window Status</span>
                         <span>
                           {oem.deterministic.is_expired ? (
                             <span className="ent-badge ent-badge-critical">
                               Expired ({oem.deterministic.days_until_expiry}d ago)
                             </span>
-                          ) : (
+                          ) : oem.deterministic.is_valid_on_bid_date ? (
                             <span className="ent-badge ent-badge-success">
-                              Valid ({oem.deterministic.days_until_expiry}d remaining)
+                              Valid on Bid Date ({oem.deterministic.days_until_expiry ?? "Active"}d remaining)
                             </span>
+                          ) : (
+                            <span className="ent-badge ent-badge-warning">Not Effective on Bid Date</span>
                           )}
                         </span>
                       </div>
+                      {oem.deterministic.structure_breakdown?.scope_of_authorization && (
+                        <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                          <span style={{ color: "var(--text-secondary)" }}>Scope of Authorization</span>
+                          <span style={{ color: "#cbd5e1" }}>{oem.deterministic.structure_breakdown.scope_of_authorization}</span>
+                        </div>
+                      )}
+                      {oem.deterministic.structure_breakdown?.signatory_name && (
+                        <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0" }}>
+                          <span style={{ color: "var(--text-secondary)" }}>Authorised Signatory</span>
+                          <span style={{ color: "#cbd5e1" }}>
+                            {oem.deterministic.structure_breakdown.signatory_name}
+                            {oem.deterministic.structure_breakdown.signatory_designation
+                              ? ` (${oem.deterministic.structure_breakdown.signatory_designation})`
+                              : ""}
+                          </span>
+                        </div>
+                      )}
                     </div>
+
+                    {/* Normalization Provenance Notice if applied */}
+                    {oem.deterministic.normalization?.is_normalized && (
+                      <div
+                        style={{
+                          marginTop: "0.75rem",
+                          padding: "0.5rem 0.75rem",
+                          background: "rgba(59, 130, 246, 0.08)",
+                          border: "1px solid rgba(59, 130, 246, 0.2)",
+                          borderRadius: "var(--radius-sm)",
+                          fontSize: "0.76rem",
+                          color: "#93c5fd",
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, marginBottom: "0.2rem" }}>Auditable Input Normalization:</div>
+                        <div style={{ color: "var(--text-secondary)" }}>Raw Match: <code>{oem.deterministic.normalization.raw_input}</code></div>
+                        <ul style={{ margin: "0.25rem 0 0 1rem", padding: 0 }}>
+                          {oem.deterministic.normalization.normalization_notes.map((note, idx) => (
+                            <li key={idx}>{note}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="ent-card" style={{ background: "var(--bg-surface)" }}>
+                  {/* Registry Record & Partner Standing Section */}
+                  <div className="ent-card" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}>
                     <div className="ent-section-title" style={{ fontSize: "0.85rem", marginBottom: "0.75rem" }}>
                       <Database size={15} color="var(--brand-blue)" />
-                      OEM Partner Standing Database
+                      Simulated OEM Partner Standing Database
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.82rem" }}>
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
                         <span style={{ color: "var(--text-secondary)" }}>Partner Standing</span>
                         <span>
                           {oem.registry.record?.is_partner_in_oem_database ? (
-                            <span className="ent-badge ent-badge-success">Verified Active</span>
+                            <span className="ent-badge ent-badge-success">Verified Active Partner</span>
+                          ) : oem.registry.registry_found ? (
+                            <span className="ent-badge ent-badge-critical">Revoked / Non-Compliant</span>
                           ) : (
-                            <span className="ent-badge ent-badge-critical">Revoked / Unlisted</span>
+                            <span className="ent-badge ent-badge-neutral">Unlisted in Mock DB (0-pt)</span>
                           )}
                         </span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>Tier / Authorization</span>
-                        <span style={{ color: "#cbd5e1" }}>
-                          {oem.registry.record?.authorization_status || "Standard Partner"}
-                        </span>
-                      </div>
+                      {oem.registry.record && (
+                        <>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ color: "var(--text-secondary)" }}>Tier / Authorization Status</span>
+                            <span style={{ color: "#cbd5e1", fontWeight: 600 }}>
+                              {oem.registry.record.authorization_status}
+                            </span>
+                          </div>
+                          {oem.registry.record.product_categories && oem.registry.record.product_categories.length > 0 && (
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                              <span style={{ color: "var(--text-secondary)" }}>Authorized Product Lines</span>
+                              <span style={{ color: "#cbd5e1" }}>{oem.registry.record.product_categories.join(", ")}</span>
+                            </div>
+                          )}
+                          {oem.registry.record.notes && (
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                              <span style={{ color: "var(--text-secondary)" }}>Program Scope Notes</span>
+                              <span style={{ color: "#94a3b8" }}>{oem.registry.record.notes}</span>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -447,32 +447,69 @@ class CrossConsistencyEngine:
                 details={},
             )
 
+        maf_tender_ref = None
+        if oem_resp.deterministic.structure_breakdown and oem_resp.deterministic.structure_breakdown.tender_reference:
+            maf_tender_ref = oem_resp.deterministic.structure_breakdown.tender_reference.strip().upper()
+        else:
+            maf_tender_ref = target_ref
+
         doc_id, filename, page_num, snippet, src_type = self._find_entity_provenance(
-            candidate_entities, target_ref
+            candidate_entities, maf_tender_ref or target_ref
         )
-        evidence = EvidenceItem(
-            evidence_id="ev_r04_pass",
-            rule_id=rule_id,
-            field_name="Tender Reference",
-            extracted_value=target_ref,
-            comparison_value=target_ref,
-            document_id=doc_id,
-            filename=filename,
-            page_number=page_num,
-            context_snippet=snippet,
-            source_type=src_type,
-            finding_description=f"OEM MAF tender reference '{target_ref}' matches tender metadata.",
+
+        is_match = (
+            maf_tender_ref == target_ref
+            or (maf_tender_ref and target_ref and (maf_tender_ref in target_ref or target_ref in maf_tender_ref))
         )
-        return CrossConsistencyCheckResult(
-            rule_id=rule_id,
-            rule_name=rule_name,
-            category=category,
-            status=CheckStatus.PASS,
-            severity=FindingSeverity.INFO,
-            summary=f"OEM MAF tender reference is consistent with bid tender '{target_ref}'.",
-            details={"target_tender_ref": target_ref},
-            evidence=[evidence],
-        )
+
+        if is_match:
+            evidence = EvidenceItem(
+                evidence_id="ev_r04_pass",
+                rule_id=rule_id,
+                field_name="Tender Reference",
+                extracted_value=maf_tender_ref,
+                comparison_value=target_ref,
+                document_id=doc_id,
+                filename=filename,
+                page_number=page_num,
+                context_snippet=snippet,
+                source_type=src_type,
+                finding_description=f"OEM MAF tender reference '{maf_tender_ref}' matches bid tender metadata.",
+            )
+            return CrossConsistencyCheckResult(
+                rule_id=rule_id,
+                rule_name=rule_name,
+                category=category,
+                status=CheckStatus.PASS,
+                severity=FindingSeverity.INFO,
+                summary=f"OEM MAF tender reference is consistent with bid tender '{target_ref}'.",
+                details={"maf_tender_ref": maf_tender_ref, "target_tender_ref": target_ref, "match": True},
+                evidence=[evidence],
+            )
+        else:
+            evidence = EvidenceItem(
+                evidence_id="ev_r04_fail",
+                rule_id=rule_id,
+                field_name="Tender Reference",
+                extracted_value=maf_tender_ref,
+                comparison_value=target_ref,
+                document_id=doc_id,
+                filename=filename,
+                page_number=page_num,
+                context_snippet=snippet,
+                source_type=src_type,
+                finding_description=f"OEM MAF was issued for tender '{maf_tender_ref}', which does not match bid tender '{target_ref}'.",
+            )
+            return CrossConsistencyCheckResult(
+                rule_id=rule_id,
+                rule_name=rule_name,
+                category=category,
+                status=CheckStatus.FAIL,
+                severity=FindingSeverity.HIGH,
+                summary=f"Tender reference mismatch: MAF specifies '{maf_tender_ref}', but bid tender is '{target_ref}'.",
+                details={"maf_tender_ref": maf_tender_ref, "target_tender_ref": target_ref, "match": False},
+                evidence=[evidence],
+            )
 
     # --------------------------------------------------------------------------
     # Rule R-05: MAF Validity Date Window & Bid Submission Date Alignment

@@ -10,6 +10,7 @@ from app.schemas.composite import (
 from app.services.compliance.gst.normalizer import gstin_normalizer
 from app.services.compliance.pan.normalizer import pan_normalizer
 from app.services.compliance.udyam.normalizer import udyam_normalizer
+from app.services.compliance.oem.normalizer import oem_normalizer
 from app.services.compliance.luhn_mod36 import verify_gstin_checksum
 from app.services.compliance.pan_decoder import is_valid_pan_format
 from app.services.compliance.state_codes import is_valid_state_code
@@ -304,31 +305,37 @@ class DocumentEntityExtractor:
                 )
 
         # 6. Extract MAF Certificate Numbers
+        found_mafs: Set[str] = set()
         for match in MAF_REGEX.finditer(text):
             raw_val = match.group(1).upper()
-            items.append(
-                ExtractedEntityItem(
-                    entity_type=EntityType.MAF_NUMBER,
-                    value=raw_val,
-                    raw_match=match.group(0),
-                    document_id=document_id,
-                    filename=filename,
-                    page_number=page_number,
-                    confidence=0.92,
-                    context_snippet=self._get_context(text, match.start(), match.end()),
-                    source_type=EntitySource.DOCUMENT_EXTRACTED,
-                    extraction_method="regex_maf",
-                    is_candidate_only=False,
-                )
-            )
-
-        for match in MAF_PREFIX_REGEX.finditer(text):
-            raw_val = match.group(1).strip().upper()
-            if len(raw_val) >= 4 and not any(raw_val in it.value for it in items if it.entity_type == EntityType.MAF_NUMBER):
+            norm_val, norm_details = oem_normalizer.normalize_maf_number(raw_val)
+            if norm_val and norm_val not in found_mafs:
+                found_mafs.add(norm_val)
                 items.append(
                     ExtractedEntityItem(
                         entity_type=EntityType.MAF_NUMBER,
-                        value=raw_val,
+                        value=norm_val,
+                        raw_match=match.group(0),
+                        document_id=document_id,
+                        filename=filename,
+                        page_number=page_number,
+                        confidence=0.92,
+                        context_snippet=self._get_context(text, match.start(), match.end()),
+                        source_type=EntitySource.DOCUMENT_EXTRACTED,
+                        extraction_method="regex_maf",
+                        is_candidate_only=False,
+                    )
+                )
+
+        for match in MAF_PREFIX_REGEX.finditer(text):
+            raw_val = match.group(1).strip()
+            norm_val, norm_details = oem_normalizer.normalize_maf_number(raw_val)
+            if norm_val and len(norm_val) >= 4 and norm_val not in found_mafs:
+                found_mafs.add(norm_val)
+                items.append(
+                    ExtractedEntityItem(
+                        entity_type=EntityType.MAF_NUMBER,
+                        value=norm_val,
                         raw_match=match.group(0),
                         document_id=document_id,
                         filename=filename,

@@ -178,27 +178,41 @@ class MockOEMProvider(BaseOEMProvider):
         clean_partner = partner_name.strip().upper()
         clean_maf = maf_number.strip().upper() if maf_number else None
 
-        for record in MOCK_OEM_DB:
-            # 1. Match by MAF certificate number if provided
-            if clean_maf and record.maf_number.upper() == clean_maf:
-                return (
-                    True,
-                    record,
-                    f"MAF Certificate '{clean_maf}' recognized in OEM partner database.",
-                    VerificationSource.MOCK_REGISTRY,
-                )
+        # Phase 1: Exact MAF certificate reference match
+        if clean_maf:
+            for record in MOCK_OEM_DB:
+                if record.maf_number.upper() == clean_maf:
+                    return (
+                        True,
+                        record,
+                        f"MAF Certificate '{clean_maf}' recognized in OEM partner database.",
+                        VerificationSource.MOCK_REGISTRY,
+                    )
 
-            # 2. Match by OEM name & partner name tokens
-            oem_match = any(token in record.oem_name.upper() for token in clean_oem.split() if len(token) > 3)
-            partner_match = any(token in record.authorized_partner_name.upper() for token in clean_partner.split() if len(token) > 3)
+        # Phase 2: Match by substantive OEM brand and Partner name tokens
+        ignored_tokens = {
+            "INDIA", "PVT", "PRIVATE", "LTD", "LIMITED", "LLP", "INC", "CORP",
+            "CORPORATION", "SERVICES", "SOLUTIONS", "SYSTEMS", "TECH",
+            "TECHNOLOGIES", "ENTERPRISE", "ENTERPRISES", "M/S", "THE", "AND", "&"
+        }
+        oem_substantive = [t for t in clean_oem.split() if t not in ignored_tokens and len(t) > 2]
+        partner_substantive = [t for t in clean_partner.split() if t not in ignored_tokens and len(t) > 2]
 
-            if oem_match and partner_match:
-                return (
-                    True,
-                    record,
-                    f"OEM partner relationship found for '{record.oem_name}' and '{record.authorized_partner_name}'.",
-                    VerificationSource.MOCK_REGISTRY,
-                )
+        if oem_substantive and partner_substantive:
+            for record in MOCK_OEM_DB:
+                rec_oem_tokens = set(record.oem_name.upper().split())
+                rec_partner_tokens = set(record.authorized_partner_name.upper().split())
+
+                oem_match = any(t in rec_oem_tokens for t in oem_substantive)
+                partner_match = any(t in rec_partner_tokens for t in partner_substantive)
+
+                if oem_match and partner_match:
+                    return (
+                        True,
+                        record,
+                        f"OEM partner relationship found for '{record.oem_name}' and '{record.authorized_partner_name}'.",
+                        VerificationSource.MOCK_REGISTRY,
+                    )
 
         return (
             False,

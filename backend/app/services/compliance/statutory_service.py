@@ -27,6 +27,7 @@ from app.schemas.statutory import (
 from app.services.compliance.gst.service import GSTModuleService, gst_module_service
 from app.services.compliance.pan.service import PANModuleService, pan_module_service
 from app.services.compliance.udyam.service import UdyamModuleService, udyam_module_service
+from app.services.compliance.oem.service import OEMModuleService, oem_module_service
 from app.services.compliance.luhn_mod36 import verify_gstin_checksum
 from app.services.compliance.pan_decoder import (
     check_pan_name_consistency,
@@ -110,6 +111,7 @@ class StatutoryValidationService:
         gst_service: Optional[GSTModuleService] = None,
         pan_service: Optional[PANModuleService] = None,
         udyam_service: Optional[UdyamModuleService] = None,
+        oem_service: Optional[OEMModuleService] = None,
     ):
         self._gstn_provider = gstn_provider or get_gstn_provider()
         self._pan_provider = pan_provider or get_pan_provider()
@@ -123,6 +125,9 @@ class StatutoryValidationService:
         )
         self._udyam_service = udyam_service or (
             UdyamModuleService(provider=self._udyam_provider) if udyam_provider else udyam_module_service
+        )
+        self._oem_service = oem_service or (
+            OEMModuleService(provider=self._oem_provider) if oem_provider else oem_module_service
         )
 
     # --------------------------------------------------------------------------
@@ -147,88 +152,11 @@ class StatutoryValidationService:
         return await self._udyam_service.validate_udyam(req)
 
     # --------------------------------------------------------------------------
-    # OEM Authorization Validation
+    # OEM Authorization Validation (Delegated to dedicated OEMModuleService)
     # --------------------------------------------------------------------------
     async def validate_oem(self, req: OEMValidationRequest) -> OEMValidationResponse:
-        errors: List[str] = []
-        is_oem_provided = bool(req.oem_name and req.oem_name.strip())
-        is_partner_provided = bool(req.authorized_partner_name and req.authorized_partner_name.strip())
-        is_maf_provided = bool(req.maf_number and req.maf_number.strip())
-        is_tender_provided = bool(req.tender_ref_number and req.tender_ref_number.strip())
-
-        if not is_oem_provided:
-            errors.append("OEM name is required.")
-        if not is_partner_provided:
-            errors.append("Authorized partner / bidder name is required.")
-
-        # Date validity checks
-        eval_date = req.bid_submission_date or date.today()
-        is_date_range_valid = True
-        is_expired = False
-        is_valid_on_bid_date = True
-        days_until_expiry: Optional[int] = None
-
-        if req.valid_from and req.valid_until:
-            if req.valid_until < req.valid_from:
-                is_date_range_valid = False
-                errors.append(f"Invalid date window: valid_until ({req.valid_until}) cannot precede valid_from ({req.valid_from}).")
-
-        if req.valid_until:
-            days_until_expiry = (req.valid_until - eval_date).days
-            if eval_date > req.valid_until:
-                is_expired = True
-                is_valid_on_bid_date = False
-                errors.append(f"MAF authorization expired on {req.valid_until} (evaluation date: {eval_date}).")
-
-        if req.valid_from and eval_date < req.valid_from:
-            is_valid_on_bid_date = False
-            errors.append(f"MAF authorization is not yet effective (valid from {req.valid_from}).")
-
-        deterministic_result = OEMDeterministicResult(
-            is_oem_name_provided=is_oem_provided,
-            is_partner_name_provided=is_partner_provided,
-            is_maf_number_provided=is_maf_provided,
-            is_tender_ref_provided=is_tender_provided,
-            is_date_range_valid=is_date_range_valid,
-            is_expired=is_expired,
-            is_valid_on_bid_date=is_valid_on_bid_date,
-            days_until_expiry=days_until_expiry,
-            validation_errors=errors,
-        )
-
-        # Provider lookup
-        registry_found, registry_record, status_message, source = (
-            await self._oem_provider.lookup_oem(
-                req.oem_name, req.authorized_partner_name, req.maf_number
-            )
-        )
-
-        registry_result = OEMRegistryResult(
-            registry_found=registry_found,
-            source=source,
-            record=registry_record,
-            status_message=status_message,
-        )
-
-        # Overall Status
-        if is_expired:
-            overall_status = ValidationStatus.EXPIRED
-        elif not is_date_range_valid or not is_valid_on_bid_date or not is_oem_provided or not is_partner_provided:
-            overall_status = ValidationStatus.INVALID_FORMAT
-        elif not registry_found:
-            overall_status = ValidationStatus.RECORD_NOT_FOUND
-        else:
-            overall_status = ValidationStatus.VALID
-
-        return OEMValidationResponse(
-            oem_name=req.oem_name,
-            authorized_partner_name=req.authorized_partner_name,
-            maf_number=req.maf_number,
-            deterministic=deterministic_result,
-            registry=registry_result,
-            overall_status=overall_status,
-            is_live_government_source=False,
-        )
+        """Validate OEM MAF via dedicated OEM domain service."""
+        return await self._oem_service.validate_oem(req)
 
     # --------------------------------------------------------------------------
     # Presets

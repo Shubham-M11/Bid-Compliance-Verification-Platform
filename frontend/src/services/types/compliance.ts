@@ -413,6 +413,33 @@ export interface UdyamValidationResponse {
   disclaimer: string;
 }
 
+export interface OEMNormalizationDetails {
+  raw_input: string;
+  normalized_value: string;
+  is_normalized: boolean;
+  normalization_notes: string[];
+}
+
+export interface MAFStructureBreakdown {
+  maf_reference?: string | null;
+  manufacturer_name: string;
+  authorized_partner_name: string;
+  tender_reference?: string | null;
+  valid_from?: string | null;
+  valid_until?: string | null;
+  scope_of_authorization?: string | null;
+  signatory_name?: string | null;
+  signatory_designation?: string | null;
+  temporal_standing: string;
+}
+
+export interface OEMManufacturerItem {
+  oem_name: string;
+  program_name: string;
+  supported_product_lines: string[];
+  active_partners_count: number;
+}
+
 export interface OEMValidationRequest {
   oem_name: string;
   authorized_partner_name: string;
@@ -437,6 +464,8 @@ export interface OEMDeterministicResult {
   is_valid_on_bid_date: boolean;
   days_until_expiry?: number | null;
   validation_errors: string[];
+  structure_breakdown?: MAFStructureBreakdown | null;
+  normalization?: OEMNormalizationDetails | null;
 }
 
 export interface OEMRegistryRecord {

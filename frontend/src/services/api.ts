@@ -405,7 +405,7 @@ export async function getUdyamStateCodes(): Promise<
 
 /**
  * Validate OEM MAF metadata and partner standing.
- * Calls POST /api/v1/statutory/oem/verify
+ * Calls POST /api/v1/statutory/oem/verify (or /api/v1/oem/verify)
  */
 export async function verifyOEM(
   request: OEMValidationRequest
@@ -422,6 +422,62 @@ export async function verifyOEM(
     return data as OEMValidationResponse;
   } catch (error: unknown) {
     throw new Error(formatNetworkError(error, "Failed to verify OEM authorization"));
+  }
+}
+
+/**
+ * Deterministically analyze 6-part metadata structure and temporal validity of OEM MAF.
+ * Calls POST /api/v1/oem/analyze-structure
+ */
+export async function analyzeOEMStructure(
+  request: {
+    oem_name: string;
+    authorized_partner_name: string;
+    maf_number?: string | null;
+    tender_ref_number?: string | null;
+    valid_from?: string | null;
+    valid_until?: string | null;
+    bid_submission_date?: string | null;
+    scope_of_authorization?: string | null;
+    signatory_name?: string | null;
+    signatory_designation?: string | null;
+  }
+) {
+  const url = `${API_BASE_URL}/api/v1/oem/analyze-structure`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+    return data;
+  } catch (error: unknown) {
+    throw new Error(formatNetworkError(error, "Failed to analyze OEM MAF structure"));
+  }
+}
+
+/**
+ * Retrieve reference list of recognized OEMs in the database.
+ * Calls GET /api/v1/oem/manufacturers
+ */
+export async function getOEMManufacturers(): Promise<
+  Array<{
+    oem_name: string;
+    program_name: string;
+    supported_product_lines: string[];
+    active_partners_count: number;
+  }>
+> {
+  const url = `${API_BASE_URL}/api/v1/oem/manufacturers`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+    return data;
+  } catch (error: unknown) {
+    throw new Error(formatNetworkError(error, "Failed to fetch OEM manufacturers"));
   }
 }
 

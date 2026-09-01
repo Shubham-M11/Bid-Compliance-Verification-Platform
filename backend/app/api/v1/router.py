@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import compliance, documents, gst, health, pan, statutory, udyam
+from app.api.v1.endpoints import compliance, documents, gst, health, oem, pan, statutory, udyam
 
 api_router = APIRouter()
 
@@ -11,6 +11,8 @@ api_router.include_router(statutory.router, prefix="/statutory", tags=["Statutor
 api_router.include_router(gst.router, prefix="/gst", tags=["GST Compliance"])
 api_router.include_router(pan.router, prefix="/pan", tags=["PAN Compliance"])
 api_router.include_router(udyam.router, prefix="/udyam", tags=["Udyam MSME Compliance"])
+api_router.include_router(oem.router, prefix="/oem", tags=["OEM Authorization Compliance"])
 api_router.include_router(compliance.router, prefix="/compliance", tags=["Compliance Intelligence"])
+
 
 

@@ -416,6 +416,38 @@ class UdyamValidationResponse(BaseModel):
 # OEM Authorization Schemas
 # ==========================================
 
+class OEMNormalizationDetails(BaseModel):
+    """Auditable normalization provenance for MAF and OEM candidate strings."""
+    raw_input: str = Field(..., description="Original raw MAF reference as extracted or input")
+    normalized_value: str = Field(..., description="Sanitized standardized MAF certificate reference")
+    is_normalized: bool = Field(..., description="True if delimiter or case normalization occurred")
+    normalization_notes: List[str] = Field(
+        default_factory=list, description="Itemized audit trail of applied normalization transformations"
+    )
+
+
+class MAFStructureBreakdown(BaseModel):
+    """Structured breakdown of decomposed Manufacturer Authorization Form (MAF) evidence."""
+    maf_reference: Optional[str] = Field(default=None, description="Standardized certificate reference code")
+    manufacturer_name: str = Field(..., description="Original Equipment Manufacturer legal entity name")
+    authorized_partner_name: str = Field(..., description="Authorized Bidder / Reseller legal entity name")
+    tender_reference: Optional[str] = Field(default=None, description="Tender / Bid reference number")
+    valid_from: Optional[str] = Field(default=None, description="Authorization start date string (YYYY-MM-DD)")
+    valid_until: Optional[str] = Field(default=None, description="Authorization expiration date string (YYYY-MM-DD)")
+    scope_of_authorization: Optional[str] = Field(default=None, description="Authorized products, series, or domains")
+    signatory_name: Optional[str] = Field(default=None, description="Authorised Signatory name from MAF")
+    signatory_designation: Optional[str] = Field(default=None, description="Authorised Signatory job title")
+    temporal_standing: str = Field(default="ACTIVE", description="ACTIVE, EXPIRED, NOT_YET_EFFECTIVE, or NOT_SPECIFIED")
+
+
+class OEMManufacturerItem(BaseModel):
+    """Reference directory item for recognized OEMs in the database."""
+    oem_name: str = Field(..., description="Standardized OEM entity name")
+    program_name: str = Field(..., description="Partner authorization program name")
+    supported_product_lines: List[str] = Field(default_factory=list, description="Supported equipment lines")
+    active_partners_count: int = Field(default=0, description="Count of active certified partners in mock database")
+
+
 class OEMValidationRequest(BaseModel):
     """Request payload for Manufacturer Authorization Form (MAF) validation."""
     oem_name: str = Field(..., description="Original Equipment Manufacturer legal name (e.g. Cisco Systems)")
@@ -447,6 +479,12 @@ class OEMDeterministicResult(BaseModel):
     validation_errors: List[str] = Field(default_factory=list, description="Deterministic validation errors")
     metadata_notice: str = Field(
         default=OEM_METADATA_DISCLAIMER, description="Advisory note on metadata scope"
+    )
+    structure_breakdown: Optional[MAFStructureBreakdown] = Field(
+        default=None, description="Structured 6-part decomposition of MAF metadata"
+    )
+    normalization: Optional[OEMNormalizationDetails] = Field(
+        default=None, description="Auditable normalization provenance details"
     )
 
 
