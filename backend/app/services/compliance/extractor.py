@@ -8,12 +8,15 @@ from app.schemas.composite import (
     ExtractedEntityItem,
 )
 from app.schemas.document import DocumentUploadResponse, PageTextEvidence
+from app.services.compliance.gst.normalizer import gstin_normalizer
 from app.services.compliance.luhn_mod36 import verify_gstin_checksum
 from app.services.compliance.pan_decoder import is_valid_pan_format
 from app.services.compliance.state_codes import is_valid_state_code
 
 # Strict Regex Patterns
 GSTIN_REGEX = re.compile(r"\b([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1})\b")
+GSTIN_DELIMITED_REGEX = re.compile(r"\b([0-9]{2}[\-\s][A-Z]{5}[0-9]{4}[A-Z]{1}[\-\s][1-9A-Z]{1}Z[0-9A-Z]{1})\b")
+GSTIN_PREFIX_REGEX = re.compile(r"(?:GSTIN|GST\s*No|GST\s*Registration(?:\s*No)?|GST\s*ID)[:\s]+([0-9A-Za-z\-_]{15,18})\b", re.IGNORECASE)
 PAN_REGEX = re.compile(r"\b([A-Z]{5}[0-9]{4}[A-Z]{1})\b")
 UDYAM_REGEX = re.compile(r"\b(UDYAM-[A-Z]{2}-[0-9]{2}-[0-9]{7})\b")
 MAF_REGEX = re.compile(r"\b(MAF-[A-Z0-9\-]+|[A-Z0-9\-]+-MAF-[A-Z0-9\-]+)\b", re.IGNORECASE)
@@ -102,19 +105,20 @@ class DocumentEntityExtractor:
         gstin_spans: List[Tuple[int, int]] = []
         found_pans: Set[str] = set()
 
-        # 1. Extract GSTINs
+        # 1. Extract GSTINs (Strict and Delimited/Prefixed Candidates)
         for match in GSTIN_REGEX.finditer(text):
             raw_val = match.group(1).upper()
-            state_valid = is_valid_state_code(raw_val[:2])
-            checksum_valid, _, _ = verify_gstin_checksum(raw_val)
+            norm_val, norm_details = gstin_normalizer.normalize(raw_val)
+            state_valid = is_valid_state_code(norm_val[:2])
+            checksum_valid, _, _ = verify_gstin_checksum(norm_val)
             conf = 0.98 if (state_valid and checksum_valid) else (0.80 if state_valid else 0.60)
 
-            found_gstins.add(raw_val)
+            found_gstins.add(norm_val)
             gstin_spans.append((match.start(), match.end()))
             items.append(
                 ExtractedEntityItem(
                     entity_type=EntityType.GSTIN,
-                    value=raw_val,
+                    value=norm_val,
                     raw_match=match.group(0),
                     document_id=document_id,
                     filename=filename,
@@ -126,6 +130,33 @@ class DocumentEntityExtractor:
                     is_candidate_only=False,
                 )
             )
+
+        # Also search for delimited or prefixed candidates if not already found
+        for match in list(GSTIN_DELIMITED_REGEX.finditer(text)) + list(GSTIN_PREFIX_REGEX.finditer(text)):
+            raw_candidate = match.group(1)
+            norm_val, norm_details = gstin_normalizer.normalize(raw_candidate)
+            if len(norm_val) == 15 and norm_val not in found_gstins:
+                state_valid = is_valid_state_code(norm_val[:2])
+                checksum_valid, _, _ = verify_gstin_checksum(norm_val)
+                if state_valid or checksum_valid:
+                    conf = 0.95 if (state_valid and checksum_valid) else 0.75
+                    found_gstins.add(norm_val)
+                    gstin_spans.append((match.start(), match.end()))
+                    items.append(
+                        ExtractedEntityItem(
+                            entity_type=EntityType.GSTIN,
+                            value=norm_val,
+                            raw_match=match.group(0),
+                            document_id=document_id,
+                            filename=filename,
+                            page_number=page_number,
+                            confidence=conf,
+                            context_snippet=self._get_context(text, match.start(), match.end()),
+                            source_type=EntitySource.DOCUMENT_EXTRACTED,
+                            extraction_method="ocr_normalized_regex",
+                            is_candidate_only=False,
+                        )
+                    )
 
         # 2. Extract PANs (avoiding PAN matches that are strictly inside GSTIN string spans)
         for match in PAN_REGEX.finditer(text):

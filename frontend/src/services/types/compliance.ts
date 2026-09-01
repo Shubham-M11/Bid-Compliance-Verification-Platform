@@ -191,6 +191,29 @@ export interface ScoringPolicy {
 // Statutory Request & Response Models
 // ==========================================
 
+export interface GSTINSegmentItem {
+  segment_name: string;
+  characters: string;
+  position_range: string;
+  is_valid: boolean;
+  description: string;
+}
+
+export interface GSTINStructureBreakdown {
+  state_segment: GSTINSegmentItem;
+  pan_segment: GSTINSegmentItem;
+  entity_segment: GSTINSegmentItem;
+  constant_segment: GSTINSegmentItem;
+  checksum_segment: GSTINSegmentItem;
+}
+
+export interface GSTINNormalizationDetails {
+  raw_input: string;
+  normalized_value: string;
+  is_normalized: boolean;
+  normalization_notes: string[];
+}
+
 export interface GSTINValidationRequest {
   gstin: string;
   expected_legal_name?: string | null;
@@ -210,6 +233,8 @@ export interface GSTINDeterministicResult {
   calculated_checksum?: string | null;
   is_checksum_valid: boolean;
   validation_errors: string[];
+  structure_breakdown?: GSTINStructureBreakdown | null;
+  normalization?: GSTINNormalizationDetails | null;
 }
 
 export interface GSTINRegistryRecord {
@@ -222,6 +247,9 @@ export interface GSTINRegistryRecord {
   state?: string | null;
   is_filing_up_to_date: boolean;
   last_updated?: string | null;
+  is_composition_dealer?: boolean;
+  composition_advisory_note?: string | null;
+  filing_status_summary?: string | null;
 }
 
 export interface GSTINRegistryResult {

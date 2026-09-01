@@ -209,7 +209,7 @@ export async function getCompliancePresets(): Promise<
 
 /**
  * Validate GSTIN and query registry.
- * Calls POST /api/v1/statutory/gstin/verify
+ * Calls POST /api/v1/statutory/gstin/verify (or /api/v1/gst/verify)
  */
 export async function verifyGSTIN(
   request: GSTINValidationRequest
@@ -226,6 +226,50 @@ export async function verifyGSTIN(
     return data as GSTINValidationResponse;
   } catch (error: unknown) {
     throw new Error(formatNetworkError(error, "Failed to verify GSTIN"));
+  }
+}
+
+/**
+ * Deterministically analyze 5-part character structure of GSTIN.
+ * Calls POST /api/v1/gst/analyze-structure
+ */
+export async function analyzeGSTINStructure(
+  gstin: string,
+  expectedStateCode?: string
+) {
+  const url = `${API_BASE_URL}/api/v1/gst/analyze-structure`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        gstin,
+        expected_state_code: expectedStateCode || null,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+    return data;
+  } catch (error: unknown) {
+    throw new Error(formatNetworkError(error, "Failed to analyze GSTIN structure"));
+  }
+}
+
+/**
+ * Retrieve reference list of official Indian State and UT codes.
+ * Calls GET /api/v1/gst/state-codes
+ */
+export async function getGSTStateCodes(): Promise<
+  Array<{ state_code: string; state_name: string }>
+> {
+  const url = `${API_BASE_URL}/api/v1/gst/state-codes`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+    return data;
+  } catch (error: unknown) {
+    throw new Error(formatNetworkError(error, "Failed to fetch state codes"));
   }
 }
 

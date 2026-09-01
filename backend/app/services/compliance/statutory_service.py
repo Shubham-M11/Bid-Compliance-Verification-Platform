@@ -24,6 +24,7 @@ from app.schemas.statutory import (
     ValidationStatus,
     VerificationSource,
 )
+from app.services.compliance.gst.service import GSTModuleService, gst_module_service
 from app.services.compliance.luhn_mod36 import verify_gstin_checksum
 from app.services.compliance.pan_decoder import (
     check_pan_name_consistency,
@@ -104,135 +105,22 @@ class StatutoryValidationService:
         pan_provider: Optional[BasePANProvider] = None,
         udyam_provider: Optional[BaseUdyamProvider] = None,
         oem_provider: Optional[BaseOEMProvider] = None,
+        gst_service: Optional[GSTModuleService] = None,
     ):
         self._gstn_provider = gstn_provider or get_gstn_provider()
         self._pan_provider = pan_provider or get_pan_provider()
         self._udyam_provider = udyam_provider or get_udyam_provider()
         self._oem_provider = oem_provider or get_oem_provider()
+        self._gst_service = gst_service or (
+            GSTModuleService(provider=self._gstn_provider) if gstn_provider else gst_module_service
+        )
 
     # --------------------------------------------------------------------------
-    # GSTIN Validation
+    # GSTIN Validation (Delegated to dedicated GSTModuleService)
     # --------------------------------------------------------------------------
     async def validate_gstin(self, req: GSTINValidationRequest) -> GSTINValidationResponse:
-        sanitized = req.gstin.strip().upper()
-        errors: List[str] = []
-
-        # 1. Deterministic Structural Validation
-        is_format_valid = bool(GSTIN_REGEX.match(sanitized))
-        state_code: Optional[str] = None
-        state_name: Optional[str] = None
-        is_state_code_valid = False
-        extracted_pan: Optional[str] = None
-        entity_type = PANEntityType.UNKNOWN
-        entity_number: Optional[str] = None
-        z_char: Optional[str] = None
-        checksum_char: Optional[str] = None
-        calc_checksum: Optional[str] = None
-        is_checksum_valid = False
-
-        if not is_format_valid:
-            errors.append(f"GSTIN '{sanitized}' does not match standard 15-character syntax (format: 22AAAAA0000A1Z5).")
-            if len(sanitized) >= 2:
-                state_code = sanitized[:2]
-                state_name = get_state_name(state_code)
-                is_state_code_valid = is_valid_state_code(state_code)
-        else:
-            state_code = sanitized[:2]
-            state_name = get_state_name(state_code)
-            is_state_code_valid = is_valid_state_code(state_code)
-            if not is_state_code_valid:
-                errors.append(f"State code '{state_code}' is not a recognized Indian State/UT code.")
-
-            # Validate expected state code if supplied
-            if req.expected_state_code and req.expected_state_code.strip():
-                expected_sc = req.expected_state_code.strip()
-                if state_code != expected_sc:
-                    errors.append(
-                        f"State code mismatch: GSTIN state code is '{state_code}' ({state_name}), but expected state code was '{expected_sc}'."
-                    )
-
-            extracted_pan = sanitized[2:12]
-            entity_type_key, _ = decode_pan_entity_type(extracted_pan)
-            entity_type = PANEntityType(entity_type_key)
-            entity_number = sanitized[12]
-            z_char = sanitized[13]
-            checksum_char = sanitized[14]
-
-            # 2. Algorithmic Checksum Validation (Luhn Mod-36)
-            is_checksum_valid, calc_checksum, _ = verify_gstin_checksum(sanitized)
-            if not is_checksum_valid:
-                errors.append(
-                    f"GSTIN checksum verification failed: 15th character is '{checksum_char}', but Luhn Mod-36 calculated checksum is '{calc_checksum}'."
-                )
-
-        deterministic_result = GSTINDeterministicResult(
-            is_format_valid=is_format_valid,
-            state_code=state_code,
-            state_name=state_name,
-            is_state_code_valid=is_state_code_valid,
-            extracted_pan=extracted_pan,
-            entity_type=entity_type,
-            entity_number=entity_number,
-            z_character=z_char,
-            checksum_char=checksum_char,
-            calculated_checksum=calc_checksum,
-            is_checksum_valid=is_checksum_valid,
-            validation_errors=errors,
-        )
-
-        # 3. Provider Lookup (Separated from deterministic validation)
-        registry_found = False
-        registry_record = None
-        status_message = "Skipped registry lookup due to invalid format."
-        source = VerificationSource.MOCK_REGISTRY
-
-        if is_format_valid:
-            registry_found, registry_record, status_message, source = (
-                await self._gstn_provider.lookup_gstin(sanitized)
-            )
-
-        registry_result = GSTINRegistryResult(
-            registry_found=registry_found,
-            source=source,
-            record=registry_record,
-            status_message=status_message,
-        )
-
-        # 4. Optional Legal Name Match Assessment
-        name_match_status = None
-        if req.expected_legal_name and req.expected_legal_name.strip():
-            if registry_record:
-                clean_exp = req.expected_legal_name.strip().upper()
-                clean_reg = registry_record.legal_name.upper()
-                clean_trade = (registry_record.trade_name or "").upper()
-                if clean_exp in clean_reg or clean_reg in clean_exp or clean_exp in clean_trade:
-                    name_match_status = "MATCH"
-                else:
-                    name_match_status = "MISMATCH"
-            else:
-                name_match_status = "NOT_CHECKED"
-
-        # 5. Overall Status Resolution
-        if not is_format_valid:
-            overall_status = ValidationStatus.INVALID_FORMAT
-        elif not is_state_code_valid:
-            overall_status = ValidationStatus.INVALID_STATE_CODE
-        elif not is_checksum_valid:
-            overall_status = ValidationStatus.INVALID_CHECKSUM
-        elif not registry_found:
-            overall_status = ValidationStatus.RECORD_NOT_FOUND
-        else:
-            overall_status = ValidationStatus.VALID
-
-        return GSTINValidationResponse(
-            gstin=sanitized,
-            deterministic=deterministic_result,
-            registry=registry_result,
-            name_match_status=name_match_status,
-            overall_status=overall_status,
-            is_live_government_source=False,
-            disclaimer=MOCK_REGISTRY_DISCLAIMER,
-        )
+        """Validate GSTIN via dedicated GST domain service."""
+        return await self._gst_service.validate_gstin(req)
 
     # --------------------------------------------------------------------------
     # PAN Validation

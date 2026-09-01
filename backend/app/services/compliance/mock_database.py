@@ -26,6 +26,8 @@ MOCK_GSTIN_DB: Dict[str, GSTINRegistryRecord] = {
         state="Maharashtra",
         is_filing_up_to_date=True,
         last_updated="2026-08-15",
+        is_composition_dealer=False,
+        filing_status_summary="GSTR-1 and GSTR-3B filed up to July 2026. No compliance defaults flagged.",
     ),
     # 2. Infosys Ltd - Active Corporate in Karnataka (29)
     "29AAACH2702H1ZW": GSTINRegistryRecord(
@@ -38,6 +40,8 @@ MOCK_GSTIN_DB: Dict[str, GSTINRegistryRecord] = {
         state="Karnataka",
         is_filing_up_to_date=True,
         last_updated="2026-08-20",
+        is_composition_dealer=False,
+        filing_status_summary="GSTR-1 and GSTR-3B filed up to July 2026. Compliant taxpayer record.",
     ),
     # 3. Bharat Electronics Ltd (Govt/PSU) - Active in Karnataka (29)
     "29AAACB1976G1ZM": GSTINRegistryRecord(
@@ -50,6 +54,8 @@ MOCK_GSTIN_DB: Dict[str, GSTINRegistryRecord] = {
         state="Karnataka",
         is_filing_up_to_date=True,
         last_updated="2026-08-25",
+        is_composition_dealer=False,
+        filing_status_summary="Public Sector Undertaking; statutory filings verified current.",
     ),
     # 4. NexaTech Solutions LLP - Active MSME Vendor in Delhi (07)
     "07AABFN1234F1ZS": GSTINRegistryRecord(
@@ -62,6 +68,8 @@ MOCK_GSTIN_DB: Dict[str, GSTINRegistryRecord] = {
         state="Delhi",
         is_filing_up_to_date=True,
         last_updated="2026-07-30",
+        is_composition_dealer=False,
+        filing_status_summary="GSTR-1 & GSTR-3B filings up to date for Q1 FY 2026-27.",
     ),
     # 5. Apex Infotech - Suspended Taxpayer in Uttar Pradesh (09)
     "09AABCA5678A1ZT": GSTINRegistryRecord(
@@ -74,6 +82,8 @@ MOCK_GSTIN_DB: Dict[str, GSTINRegistryRecord] = {
         state="Uttar Pradesh",
         is_filing_up_to_date=False,
         last_updated="2026-06-10",
+        is_composition_dealer=False,
+        filing_status_summary="Filing defaults: GSTR-3B overdue for 6 consecutive tax periods. Registration SUSPENDED under Rule 21A.",
     ),
     # 6. Defunct Trading Corp - Cancelled Taxpayer in Maharashtra (27)
     "27AAACD9999D1Z7": GSTINRegistryRecord(
@@ -86,6 +96,8 @@ MOCK_GSTIN_DB: Dict[str, GSTINRegistryRecord] = {
         state="Maharashtra",
         is_filing_up_to_date=False,
         last_updated="2025-12-01",
+        is_composition_dealer=False,
+        filing_status_summary="Registration CANCELLED suo-moto by tax authority on 2025-12-01 due to non-commencement of business.",
     ),
     # 7. Rajesh Kumar Sharma - Individual Proprietorship in Haryana (06)
     "06APSPS4321P1Z5": GSTINRegistryRecord(
@@ -98,6 +110,23 @@ MOCK_GSTIN_DB: Dict[str, GSTINRegistryRecord] = {
         state="Haryana",
         is_filing_up_to_date=True,
         last_updated="2026-08-10",
+        is_composition_dealer=False,
+        filing_status_summary="Individual proprietorship; quarterly return filing compliant.",
+    ),
+    # 8. Gujarat Enterprise - Composition Taxpayer in Gujarat (24)
+    "24AAACG1234G1Z8": GSTINRegistryRecord(
+        legal_name="GUJARAT TRADING & HARDWARE ENTERPRISES",
+        trade_name="GUJARAT HARDWARE",
+        status=TaxpayerStatus.ACTIVE,
+        taxpayer_type="Composition",
+        registration_date="2021-02-10",
+        principal_place_of_business="GIDC Estate, Vatva, Ahmedabad, Gujarat - 382445",
+        state="Gujarat",
+        is_filing_up_to_date=True,
+        last_updated="2026-08-12",
+        is_composition_dealer=True,
+        composition_advisory_note="Taxpayer is registered under Section 10 Composition Scheme (CMP-08 quarterly statement compliant). Note: Composition taxpayers cannot issue tax invoices or charge GST to buyers.",
+        filing_status_summary="CMP-08 statements filed up to Q1 FY 2026-27.",
     ),
 }
 

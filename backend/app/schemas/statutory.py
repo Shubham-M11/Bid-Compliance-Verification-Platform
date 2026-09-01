@@ -91,6 +91,32 @@ OEM_METADATA_DISCLAIMER = (
 # GSTIN Schemas
 # ==========================================
 
+class GSTINSegmentItem(BaseModel):
+    """Segment breakdown for a component of the 15-character GSTIN."""
+    segment_name: str = Field(..., description="Component name: State Code, Embedded PAN, Entity Serial, Default Constant, Checksum")
+    characters: str = Field(..., description="Character value in this segment")
+    position_range: str = Field(..., description="1-indexed position span, e.g., '1-2', '3-12', '13', '14', '15'")
+    is_valid: bool = Field(..., description="Whether this segment adheres to the statutory format specification")
+    description: str = Field(..., description="Human-readable explanation of the segment's meaning and statutory rule")
+
+
+class GSTINStructureBreakdown(BaseModel):
+    """Detailed character-by-character breakdown of the 15-character GSTIN across all 5 segments."""
+    state_segment: GSTINSegmentItem = Field(..., description="Characters 1-2: 2-digit Indian State/UT census code")
+    pan_segment: GSTINSegmentItem = Field(..., description="Characters 3-12: 10-character Income Tax PAN")
+    entity_segment: GSTINSegmentItem = Field(..., description="Character 13: Entity counter / registration count within state (1-9, A-Z)")
+    constant_segment: GSTINSegmentItem = Field(..., description="Character 14: Default constant 'Z'")
+    checksum_segment: GSTINSegmentItem = Field(..., description="Character 15: Luhn Mod-36 calculated checksum character")
+
+
+class GSTINNormalizationDetails(BaseModel):
+    """Auditable provenance of any input normalization or OCR correction applied."""
+    raw_input: str = Field(..., description="Original un-normalized string received")
+    normalized_value: str = Field(..., description="Sanitized 15-character uppercase string")
+    is_normalized: bool = Field(default=False, description="True if any delimiter cleaning, whitespace removal, or OCR correction was applied")
+    normalization_notes: List[str] = Field(default_factory=list, description="Audit log of specific normalizations performed")
+
+
 class GSTINValidationRequest(BaseModel):
     """Request payload for GSTIN validation."""
     gstin: str = Field(..., description="15-character Goods and Services Tax Identification Number")
@@ -118,6 +144,12 @@ class GSTINDeterministicResult(BaseModel):
     calculated_checksum: Optional[str] = Field(default=None, description="Expected Luhn Mod-36 checksum char")
     is_checksum_valid: bool = Field(default=False, description="True if actual checksum matches Mod-36 calculation")
     validation_errors: List[str] = Field(default_factory=list, description="List of structural error descriptions")
+    structure_breakdown: Optional[GSTINStructureBreakdown] = Field(
+        default=None, description="Detailed 5-part character breakdown"
+    )
+    normalization: Optional[GSTINNormalizationDetails] = Field(
+        default=None, description="Auditable normalization provenance details"
+    )
 
 
 class GSTINRegistryRecord(BaseModel):
@@ -131,6 +163,15 @@ class GSTINRegistryRecord(BaseModel):
     state: Optional[str] = Field(default=None, description="Registered state")
     is_filing_up_to_date: bool = Field(default=True, description="True if GST return filings are compliant")
     last_updated: Optional[str] = Field(default=None, description="Timestamp of last registry record update")
+    is_composition_dealer: bool = Field(
+        default=False, description="True if registered under Section 10 Composition Scheme"
+    )
+    composition_advisory_note: Optional[str] = Field(
+        default=None, description="Factual advisory regarding composition dealer limitations"
+    )
+    filing_status_summary: Optional[str] = Field(
+        default=None, description="Factual summary of GSTR-1 / GSTR-3B return compliance history"
+    )
 
 
 class GSTINRegistryResult(BaseModel):

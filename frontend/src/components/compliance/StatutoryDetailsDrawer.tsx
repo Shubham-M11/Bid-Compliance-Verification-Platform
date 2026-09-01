@@ -116,59 +116,126 @@ export default function StatutoryDetailsDrawer({
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-                  {/* Deterministic Section */}
-                  <div className="ent-card" style={{ background: "var(--bg-surface)" }}>
+                  {/* Visual 5-Segment GSTIN Breakdown */}
+                  <div className="ent-card" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}>
                     <div className="ent-section-title" style={{ fontSize: "0.85rem", marginBottom: "0.75rem" }}>
                       <Cpu size={15} color="var(--brand-blue)" />
-                      Deterministic Algorithmic Validation
+                      15-Character GSTIN Structure Breakdown
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.82rem" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>Input GSTIN</span>
-                        <code style={{ color: "#ffffff", fontWeight: 600 }}>{gstin.gstin}</code>
+
+                    {/* Segment Badges */}
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "0.4rem",
+                        padding: "0.75rem",
+                        background: "var(--bg-app)",
+                        borderRadius: "var(--radius-md)",
+                        border: "1px solid var(--border-subtle)",
+                        marginBottom: "0.85rem",
+                        fontFamily: "monospace",
+                        fontSize: "0.95rem",
+                        fontWeight: 700,
+                      }}
+                    >
+                      <div style={{ padding: "0.35rem 0.55rem", background: "rgba(59, 130, 246, 0.15)", border: "1px solid rgba(59, 130, 246, 0.3)", borderRadius: "var(--radius-sm)", color: "#93c5fd", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 500 }}>State (1-2)</div>
+                        <div>{gstin.gstin.slice(0, 2)}</div>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>15-Character Syntax</span>
+                      <div style={{ padding: "0.35rem 0.55rem", background: "rgba(168, 85, 247, 0.15)", border: "1px solid rgba(168, 85, 247, 0.3)", borderRadius: "var(--radius-sm)", color: "#c084fc", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 500 }}>PAN (3-12)</div>
+                        <div>{gstin.gstin.slice(2, 12)}</div>
+                      </div>
+                      <div style={{ padding: "0.35rem 0.55rem", background: "rgba(34, 197, 94, 0.15)", border: "1px solid rgba(34, 197, 94, 0.3)", borderRadius: "var(--radius-sm)", color: "#86efac", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 500 }}>Entity (13)</div>
+                        <div>{gstin.gstin[12] || "—"}</div>
+                      </div>
+                      <div style={{ padding: "0.35rem 0.55rem", background: "rgba(234, 179, 8, 0.15)", border: "1px solid rgba(234, 179, 8, 0.3)", borderRadius: "var(--radius-sm)", color: "#fde047", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 500 }}>Const (14)</div>
+                        <div>{gstin.gstin[13] || "—"}</div>
+                      </div>
+                      <div style={{ padding: "0.35rem 0.55rem", background: gstin.deterministic.is_checksum_valid ? "rgba(34, 197, 94, 0.2)" : "rgba(239, 68, 68, 0.2)", border: gstin.deterministic.is_checksum_valid ? "1px solid rgba(34, 197, 94, 0.4)" : "1px solid rgba(239, 68, 68, 0.4)", borderRadius: "var(--radius-sm)", color: gstin.deterministic.is_checksum_valid ? "#86efac" : "#fca5a5", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 500 }}>Checksum (15)</div>
+                        <div>{gstin.gstin[14] || "—"}</div>
+                      </div>
+                    </div>
+
+                    {/* Segment Details Table */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem", fontSize: "0.8rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>1-2: State Jurisdiction</span>
+                        <span style={{ color: "#cbd5e1", fontWeight: 500 }}>
+                          {gstin.deterministic.state_name || "Unknown"} (Code: {gstin.deterministic.state_code || "—"})
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>3-12: Embedded PAN</span>
+                        <span style={{ color: "#93c5fd", fontWeight: 600 }}>
+                          {gstin.deterministic.extracted_pan || "—"} ({gstin.deterministic.entity_type})
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>13: Entity Counter</span>
+                        <span style={{ color: "#cbd5e1" }}>
+                          Registration serial #{gstin.deterministic.entity_number || "1"} in state
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>14: Default Constant</span>
                         <span>
-                          {gstin.deterministic.is_format_valid ? (
-                            <span className="ent-badge ent-badge-success">Valid Regex</span>
+                          {gstin.deterministic.z_character === "Z" ? (
+                            <span className="ent-badge ent-badge-success">'Z' (Statutory Default)</span>
                           ) : (
-                            <span className="ent-badge ent-badge-critical">Invalid Format</span>
+                            <span className="ent-badge ent-badge-critical">'{gstin.deterministic.z_character}' (Expected 'Z')</span>
                           )}
                         </span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>State Code / Territory</span>
-                        <span style={{ color: "#cbd5e1" }}>
-                          {gstin.deterministic.state_code || "—"} ({gstin.deterministic.state_name || "Unknown"})
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>Embedded 10-char PAN</span>
-                        <code style={{ color: "#93c5fd" }}>{gstin.deterministic.extracted_pan || "—"}</code>
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>Luhn Mod-36 Checksum</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>15: Luhn Mod-36 Checksum</span>
                         <span>
                           {gstin.deterministic.is_checksum_valid ? (
                             <span className="ent-badge ent-badge-success">
-                              Char: {gstin.deterministic.checksum_char} (Verified)
+                              Verified (Char '{gstin.deterministic.checksum_char}')
                             </span>
                           ) : (
                             <span className="ent-badge ent-badge-critical">
-                              Mismatch (Expected: {gstin.deterministic.calculated_checksum})
+                              Mismatch (Actual: '{gstin.deterministic.checksum_char}', Expected: '{gstin.deterministic.calculated_checksum}')
                             </span>
                           )}
                         </span>
                       </div>
                     </div>
+
+                    {/* Normalization Provenance Notice if applied */}
+                    {gstin.deterministic.normalization?.is_normalized && (
+                      <div
+                        style={{
+                          marginTop: "0.75rem",
+                          padding: "0.5rem 0.75rem",
+                          background: "rgba(59, 130, 246, 0.08)",
+                          border: "1px solid rgba(59, 130, 246, 0.2)",
+                          borderRadius: "var(--radius-sm)",
+                          fontSize: "0.76rem",
+                          color: "#93c5fd",
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, marginBottom: "0.2rem" }}>Auditable Input Normalization:</div>
+                        <div style={{ color: "var(--text-secondary)" }}>Raw Match: <code>{gstin.deterministic.normalization.raw_input}</code></div>
+                        <ul style={{ margin: "0.25rem 0 0 1rem", padding: 0 }}>
+                          {gstin.deterministic.normalization.normalization_notes.map((note, idx) => (
+                            <li key={idx}>{note}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Registry Lookup Section */}
-                  <div className="ent-card" style={{ background: "var(--bg-surface)" }}>
+                  {/* Registry Lookup & Standing Section */}
+                  <div className="ent-card" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}>
                     <div className="ent-section-title" style={{ fontSize: "0.85rem", marginBottom: "0.75rem" }}>
                       <Database size={15} color="var(--brand-blue)" />
-                      Simulated Registry Record
+                      Simulated Registry Standing & Health
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.82rem" }}>
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -193,8 +260,14 @@ export default function StatutoryDetailsDrawer({
                               {gstin.registry.record.legal_name}
                             </span>
                           </div>
+                          {gstin.registry.record.trade_name && (
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                              <span style={{ color: "var(--text-secondary)" }}>Trade Name</span>
+                              <span style={{ color: "#cbd5e1" }}>{gstin.registry.record.trade_name}</span>
+                            </div>
+                          )}
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <span style={{ color: "var(--text-secondary)" }}>Taxpayer Status</span>
+                            <span style={{ color: "var(--text-secondary)" }}>Taxpayer Standing</span>
                             <span>
                               {gstin.registry.record.status === "ACTIVE" ? (
                                 <span className="ent-badge ent-badge-success">Active</span>
@@ -204,7 +277,13 @@ export default function StatutoryDetailsDrawer({
                             </span>
                           </div>
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <span style={{ color: "var(--text-secondary)" }}>Return Filing Compliant</span>
+                            <span style={{ color: "var(--text-secondary)" }}>Taxpayer Category</span>
+                            <span style={{ color: "#cbd5e1" }}>
+                              {gstin.registry.record.taxpayer_type || "Regular"}
+                            </span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ color: "var(--text-secondary)" }}>Return Filing Status</span>
                             <span>
                               {gstin.registry.record.is_filing_up_to_date ? (
                                 <span className="ent-badge ent-badge-success">Up to Date</span>
@@ -213,6 +292,42 @@ export default function StatutoryDetailsDrawer({
                               )}
                             </span>
                           </div>
+                          {gstin.registry.record.filing_status_summary && (
+                            <div
+                              style={{
+                                padding: "0.5rem 0.75rem",
+                                background: gstin.registry.record.is_filing_up_to_date
+                                  ? "rgba(34, 197, 94, 0.08)"
+                                  : "rgba(239, 68, 68, 0.08)",
+                                border: gstin.registry.record.is_filing_up_to_date
+                                  ? "1px solid rgba(34, 197, 94, 0.2)"
+                                  : "1px solid rgba(239, 68, 68, 0.2)",
+                                borderRadius: "var(--radius-sm)",
+                                fontSize: "0.76rem",
+                                color: gstin.registry.record.is_filing_up_to_date ? "#86efac" : "#fca5a5",
+                                marginTop: "0.25rem",
+                              }}
+                            >
+                              <strong>Compliance Record: </strong>
+                              {gstin.registry.record.filing_status_summary}
+                            </div>
+                          )}
+                          {gstin.registry.record.is_composition_dealer && (
+                            <div
+                              style={{
+                                padding: "0.5rem 0.75rem",
+                                background: "rgba(234, 179, 8, 0.08)",
+                                border: "1px solid rgba(234, 179, 8, 0.25)",
+                                borderRadius: "var(--radius-sm)",
+                                fontSize: "0.76rem",
+                                color: "#fde047",
+                                marginTop: "0.25rem",
+                              }}
+                            >
+                              <strong>Composition Scheme Advisory: </strong>
+                              {gstin.registry.record.composition_advisory_note}
+                            </div>
+                          )}
                         </>
                       )}
                     </div>
