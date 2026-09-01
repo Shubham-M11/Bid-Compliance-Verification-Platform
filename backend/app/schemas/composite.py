@@ -138,16 +138,41 @@ class CrossConsistencyCheckResult(BaseModel):
 
 
 class ScoreContribution(BaseModel):
-    """Itemized explainable score adjustment."""
+    """Itemized explainable score adjustment with procurement impact and policy rationale."""
+    contribution_id: str = Field(..., description="Unique contribution identifier (e.g. SC_001)")
     rule_id: str = Field(..., description="Rule triggering this score contribution")
-    rule_category: str = Field(..., description="Rule category")
+    rule_category: str = Field(..., description="Rule category (Statutory Validity, Taxpayer Standing, OEM Authorization, Relational Consistency)")
     title: str = Field(..., description="Short explanation title")
     points_change: int = Field(..., description="Points deducted (negative) or neutral (0)")
-    reason: str = Field(..., description="Clear explanation of the score deduction or neutral verdict")
+    reason: str = Field(..., description="Clear factual explanation of the score deduction or neutral verdict")
     severity: FindingSeverity = Field(..., description="Severity level")
     is_primary_penalty: bool = Field(
         default=True,
-        description="True if primary deduction for root cause; False if suppressed to avoid double counting",
+        description="True if primary deduction for root cause; False if suppressed/secondary to avoid double counting",
+    )
+    is_deduplicated: bool = Field(
+        default=False,
+        description="True if this finding was deduplicated against a related root-cause finding to prevent double penalty",
+    )
+    deduplication_reason: Optional[str] = Field(
+        default=None,
+        description="Explanation of why this contribution was deduplicated or assigned 0 points",
+    )
+    procurement_impact: str = Field(
+        default="Requires procurement officer review before bid award.",
+        description="Explanation of why this issue matters for tender evaluation",
+    )
+    policy_rationale: str = Field(
+        default="Platform-defined risk weighting calibrated for tender evaluation priority.",
+        description="Justification for the point weight assigned to this finding",
+    )
+    triggering_condition: str = Field(
+        default="Identified during document verification.",
+        description="Specific deterministic condition that triggered this rule",
+    )
+    linked_evidence: List[EvidenceItem] = Field(
+        default_factory=list,
+        description="Associated source document evidence items",
     )
 
 
@@ -160,6 +185,44 @@ class ComplianceFinding(BaseModel):
     description: str = Field(..., description="Detailed description of the issue or confirmation")
     remediation_guidance: str = Field(..., description="Actionable recommendation for resolution")
     linked_evidence: List[EvidenceItem] = Field(default_factory=list, description="Associated evidence citations")
+
+
+# ==============================================================================
+# Officer Decision Support Models (Human-in-the-Loop)
+# ==============================================================================
+
+class OfficerActionType(str, Enum):
+    """Structured action types for human procurement officers."""
+    REVIEW_IN_PROGRESS = "REVIEW_IN_PROGRESS"
+    EVIDENCE_CONFIRMED = "EVIDENCE_CONFIRMED"
+    CLARIFICATION_REQUESTED = "CLARIFICATION_REQUESTED"
+    ESCALATED_FOR_MANUAL_REVIEW = "ESCALATED_FOR_MANUAL_REVIEW"
+    RECOMMEND_ACCEPTANCE = "RECOMMEND_ACCEPTANCE"
+    RECOMMEND_REJECTION = "RECOMMEND_REJECTION"
+
+
+class OfficerDecisionRequest(BaseModel):
+    """Request payload for recording a human procurement officer review decision."""
+    verification_id: str = Field(..., description="Target verification session ID")
+    officer_name: str = Field(..., min_length=2, description="Full name of the reviewing officer")
+    officer_designation: str = Field(..., min_length=2, description="Official job title / committee role")
+    action: OfficerActionType = Field(..., description="Selected procurement review action")
+    officer_notes: Optional[str] = Field(default=None, description="Detailed officer review remarks / justification")
+    findings_reviewed: List[str] = Field(default_factory=list, description="List of finding IDs reviewed and acknowledged")
+
+
+class OfficerDecisionResponse(BaseModel):
+    """Recorded audit trail record of a human officer review decision."""
+    decision_id: str = Field(..., description="Unique generated decision audit ID")
+    verification_id: str = Field(..., description="Associated verification session ID")
+    officer_name: str = Field(..., description="Reviewing officer name")
+    officer_designation: str = Field(..., description="Reviewing officer title")
+    action: OfficerActionType = Field(..., description="Recorded review action")
+    officer_notes: Optional[str] = Field(default=None, description="Officer remarks")
+    findings_reviewed: List[str] = Field(default_factory=list, description="Acknowledged finding IDs")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="UTC timestamp of decision")
+    is_human_decision: bool = Field(default=True, description="Always True; confirms this is a human judgment")
+    status_summary: str = Field(..., description="Executive summary of the recorded officer action")
 
 
 # ==============================================================================
@@ -197,7 +260,7 @@ class CompositeVerificationRequest(BaseModel):
     bid_metadata: Optional[BidMetadata] = Field(
         default=None, description="Tender context metadata for cross-matching"
     )
-    scoring_policy: Optional[ScoringPolicy] = Field(
+    scoring_policy: Optional["ScoringPolicy"] = Field(
         default=None, description="Optional custom review-priority scoring policy overrides"
     )
 
@@ -231,8 +294,23 @@ class ScoringPolicy(BaseModel):
     Configurable review-priority scoring policy.
     Decouples deduction weights and risk thresholds from verification logic,
     allowing procurement authorities to configure tender evaluation priorities.
+    
+    IMPORTANT:
+    Weights are platform-defined risk-prioritization values used to assist
+    human procurement officers. They are NOT legal or government-issued scores.
     """
+    policy_id: str = Field(default="POL-GEM-STD-2026", description="Policy identifier code")
+    policy_name: str = Field(
+        default="Platform-Defined Public Procurement Risk Prioritization Policy",
+        description="Human-readable policy title",
+    )
+    policy_description: str = Field(
+        default="Deterministic risk-prioritization policy for public tender compliance triage. This score is a decision-support metric, not a statutory or legal verdict.",
+        description="Policy scope and legal disclaimer",
+    )
     starting_score: int = Field(default=100, ge=1, le=1000, description="Baseline starting score")
+    min_score: int = Field(default=0, ge=0, description="Minimum score clamp boundary")
+    max_score: int = Field(default=100, ge=1, description="Maximum score clamp boundary")
 
     # Statutory Deductions
     gstin_format_penalty: int = Field(default=20, ge=0, description="Deduction for malformed GSTIN format")
@@ -271,6 +349,13 @@ class ScoringPolicy(BaseModel):
     )
 
 
+class ScoringEvaluationRequest(BaseModel):
+    """Request payload for standalone scoring evaluation."""
+    statutory_verifications: Optional[StatutoryVerificationsBundle] = Field(default=None)
+    consistency_checks: List[CrossConsistencyCheckResult] = Field(default_factory=list)
+    scoring_policy: Optional[ScoringPolicy] = Field(default=None)
+
+
 class CompositeVerificationResponse(BaseModel):
     """Complete composite compliance intelligence report."""
     verification_id: str = Field(..., description="Unique generated verification session ID")
@@ -296,3 +381,4 @@ class CompositeVerificationResponse(BaseModel):
         default=False, description="Always False for mock/sandbox provider; True only for live govt integrations"
     )
     disclaimer: str = Field(default=MOCK_REGISTRY_DISCLAIMER, description="Mandatory transparency disclaimer")
+

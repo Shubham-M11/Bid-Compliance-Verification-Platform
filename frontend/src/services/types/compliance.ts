@@ -138,6 +138,7 @@ export interface CrossConsistencyCheckResult {
 }
 
 export interface ScoreContribution {
+  contribution_id?: string;
   rule_id: string;
   rule_category: string;
   title: string;
@@ -145,6 +146,12 @@ export interface ScoreContribution {
   reason: string;
   severity: FindingSeverity;
   is_primary_penalty: boolean;
+  is_deduplicated?: boolean;
+  deduplication_reason?: string | null;
+  procurement_impact?: string;
+  policy_rationale?: string;
+  triggering_condition?: string;
+  linked_evidence?: EvidenceItem[];
 }
 
 export interface ComplianceFinding {
@@ -157,6 +164,36 @@ export interface ComplianceFinding {
   linked_evidence: EvidenceItem[];
 }
 
+export type OfficerActionType =
+  | "REVIEW_IN_PROGRESS"
+  | "EVIDENCE_CONFIRMED"
+  | "CLARIFICATION_REQUESTED"
+  | "ESCALATED_FOR_MANUAL_REVIEW"
+  | "RECOMMEND_ACCEPTANCE"
+  | "RECOMMEND_REJECTION";
+
+export interface OfficerDecisionRequest {
+  verification_id: string;
+  officer_name: string;
+  officer_designation: string;
+  action: OfficerActionType;
+  officer_notes?: string | null;
+  findings_reviewed?: string[];
+}
+
+export interface OfficerDecisionResponse {
+  decision_id: string;
+  verification_id: string;
+  officer_name: string;
+  officer_designation: string;
+  action: OfficerActionType;
+  officer_notes?: string | null;
+  findings_reviewed: string[];
+  timestamp: string;
+  is_human_decision: boolean;
+  status_summary: string;
+}
+
 export interface BidMetadata {
   tender_ref_number?: string | null;
   expected_bidder_name?: string | null;
@@ -165,7 +202,12 @@ export interface BidMetadata {
 }
 
 export interface ScoringPolicy {
+  policy_id?: string;
+  policy_name?: string;
+  policy_description?: string;
   starting_score?: number;
+  min_score?: number;
+  max_score?: number;
   gstin_format_penalty?: number;
   gstin_checksum_penalty?: number;
   gstin_suspended_penalty?: number;

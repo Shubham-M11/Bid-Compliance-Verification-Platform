@@ -238,7 +238,7 @@ class CompositeVerificationService:
                 )
             )
 
-        # Enrich any findings without linked evidence with matching audit trail items
+        # Enrich any findings and score contributions without linked evidence with matching audit trail items
         for f in findings:
             if not f.linked_evidence:
                 matching_ev = [
@@ -251,6 +251,19 @@ class CompositeVerificationService:
                 ]
                 if matching_ev:
                     f.linked_evidence = matching_ev[:2]
+
+        for sc in score_breakdown:
+            if not sc.linked_evidence:
+                matching_ev = [
+                    ev for ev in audit_trail
+                    if ev.rule_id == sc.rule_id
+                    or (sc.rule_id.startswith("STAT-GST") and ev.field_name.upper() == "GSTIN")
+                    or (sc.rule_id.startswith("STAT-PAN") and ev.field_name.upper() == "PAN")
+                    or (sc.rule_id.startswith("STAT-UDYAM") and ev.field_name.upper() == "UDYAM")
+                    or (sc.rule_id.startswith("STAT-OEM") and ev.field_name.upper() in ["OEM_NAME", "MAF_NUMBER"])
+                ]
+                if matching_ev:
+                    sc.linked_evidence = matching_ev[:2]
 
         return CompositeVerificationResponse(
             verification_id=verification_id,

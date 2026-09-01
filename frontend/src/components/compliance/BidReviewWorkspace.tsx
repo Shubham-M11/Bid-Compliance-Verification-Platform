@@ -22,6 +22,7 @@ import CrossEntityTable from "./CrossEntityTable";
 import DemoScenarioBar from "./DemoScenarioBar";
 import EvidenceViewerDrawer from "./EvidenceViewerDrawer";
 import ManualVerificationModal from "./ManualVerificationModal";
+import OfficerDecisionPanel from "./OfficerDecisionPanel";
 import ReviewFindingsSection from "./ReviewFindingsSection";
 import ScoreExplanationCard from "./ScoreExplanationCard";
 import SourceEvidenceAudit from "./SourceEvidenceAudit";
@@ -379,13 +380,20 @@ export default function BidReviewWorkspace() {
             breakdown={verificationResult.score_breakdown}
           />
 
-          {/* Level 4: Cross-Entity Consistency Table */}
+          {/* Level 4: Officer Decision Support & Review Actions */}
+          <OfficerDecisionPanel
+            verificationId={verificationResult.verification_id}
+            findings={verificationResult.findings}
+            score={verificationResult.overall_score}
+          />
+
+          {/* Level 5: Cross-Entity Consistency Table */}
           <CrossEntityTable
             checks={verificationResult.consistency_checks}
             onInspectEvidence={openEvidenceDrawer}
           />
 
-          {/* Level 4: Source Evidence & Provenance Audit */}
+          {/* Level 5: Source Evidence & Provenance Audit */}
           <SourceEvidenceAudit
             evidenceList={verificationResult.evidence_audit_trail}
             onInspectEvidence={openEvidenceDrawer}

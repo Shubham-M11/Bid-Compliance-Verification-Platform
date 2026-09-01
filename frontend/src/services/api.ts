@@ -10,9 +10,12 @@ import type {
   GSTINValidationResponse,
   OEMValidationRequest,
   OEMValidationResponse,
+  OfficerDecisionRequest,
+  OfficerDecisionResponse,
   PANValidationRequest,
   PANValidationResponse,
   PresetComplianceScenario,
+  ScoringPolicy,
   UdyamValidationRequest,
   UdyamValidationResponse,
 } from "./types/compliance";
@@ -478,6 +481,48 @@ export async function getOEMManufacturers(): Promise<
     return data;
   } catch (error: unknown) {
     throw new Error(formatNetworkError(error, "Failed to fetch OEM manufacturers"));
+  }
+}
+
+/**
+ * Retrieve active platform review-priority scoring policy.
+ * Calls GET /api/v1/scoring/policy
+ */
+export async function getScoringPolicy(): Promise<ScoringPolicy> {
+  const url = `${API_BASE_URL}/api/v1/scoring/policy`;
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+    return data as ScoringPolicy;
+  } catch (error: unknown) {
+    throw new Error(formatNetworkError(error, "Failed to fetch scoring policy"));
+  }
+}
+
+/**
+ * Record human procurement officer review decision.
+ * Calls POST /api/v1/review/decision
+ */
+export async function recordOfficerDecision(
+  request: OfficerDecisionRequest
+): Promise<OfficerDecisionResponse> {
+  const url = `${API_BASE_URL}/api/v1/review/decision`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+    return data as OfficerDecisionResponse;
+  } catch (error: unknown) {
+    throw new Error(formatNetworkError(error, "Failed to record officer decision"));
   }
 }
 
