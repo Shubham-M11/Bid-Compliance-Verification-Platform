@@ -124,7 +124,7 @@ export default function DocumentUploadCard() {
               result.status === "processed"
                 ? "badge-success"
                 : result.status === "ocr_processed"
-                ? "badge-sih"
+                ? "badge-info"
                 : result.status === "no_text_detected"
                 ? "badge-danger"
                 : "badge-danger"
@@ -358,7 +358,7 @@ export default function DocumentUploadCard() {
                         currentPageEvidence.extraction_method === "digital"
                           ? "badge-success"
                           : currentPageEvidence.extraction_method === "ocr"
-                          ? "badge-sih"
+                          ? "badge-info"
                           : "badge-neutral"
                       }`}
                       style={{ fontSize: "0.72rem", padding: "0.25rem 0.55rem" }}
@@ -375,7 +375,7 @@ export default function DocumentUploadCard() {
                   {currentPageEvidence?.ocr_confidence !== null &&
                     currentPageEvidence?.ocr_confidence !== undefined && (
                       <span
-                        className="badge badge-sih"
+                        className="badge badge-info"
                         style={{ fontSize: "0.72rem", padding: "0.25rem 0.55rem" }}
                       >
                         Confidence: {currentPageEvidence.ocr_confidence}%

@@ -19,8 +19,8 @@ interface DemoScenarioBarProps {
   presets: PresetComplianceScenario[];
   activePresetId?: string | null;
   onSelectPreset: (preset: PresetComplianceScenario) => void;
-  onOpenManualModal: () => void;
-  onUploadClick: () => void;
+  onOpenManualModal?: () => void;
+  onUploadClick?: () => void;
   isLoading?: boolean;
 }
 

@@ -592,3 +592,51 @@ a {
 .spin {
   animation: spin 1s linear infinite;
 }
+
+/* Print Optimization for Official Officer Audit Reports */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .top-navbar,
+  .nav-links,
+  .ent-btn,
+  .ent-modal-overlay,
+  .drawer-overlay {
+    display: none !important;
+  }
+
+  .app-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .ent-card {
+    background: #ffffff !important;
+    border: 1px solid #cccccc !important;
+    box-shadow: none !important;
+    color: #000000 !important;
+    break-inside: avoid;
+    margin-bottom: 1rem !important;
+  }
+
+  .ent-badge {
+    border: 1px solid #666666 !important;
+    color: #000000 !important;
+    background: #f0f0f0 !important;
+  }
+
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  th, td {
+    border-bottom: 1px solid #dddddd !important;
+    color: #000000 !important;
+  }
+}
+

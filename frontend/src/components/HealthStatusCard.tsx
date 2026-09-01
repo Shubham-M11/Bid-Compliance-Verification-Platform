@@ -150,6 +150,20 @@ export default function HealthStatusCard() {
             <span className="meta-value">{health.environment}</span>
           </div>
           <div className="meta-item">
+            <span className="meta-label">OCR Capability</span>
+            <span className="meta-value">
+              {health.ocr_available ? (
+                <span style={{ color: "var(--status-success-text)", fontWeight: 600 }}>
+                  Ready (Tesseract OCR Detected)
+                </span>
+              ) : (
+                <span style={{ color: "var(--text-muted)" }}>
+                  Fallback Mode (Digital Parser Active)
+                </span>
+              )}
+            </span>
+          </div>
+          <div className="meta-item">
             <span className="meta-label">Server Timestamp</span>
             <span className="meta-value">
               {new Date(health.timestamp).toLocaleTimeString()} UTC

@@ -152,7 +152,7 @@ export default function ReviewFindingsSection({
                 </div>
 
                 {/* Evidence citation footer */}
-                {firstEvidence && (
+                {f.linked_evidence && f.linked_evidence.length > 0 && (
                   <div
                     style={{
                       display: "flex",
@@ -162,22 +162,39 @@ export default function ReviewFindingsSection({
                       paddingTop: "0.65rem",
                       borderTop: "1px solid var(--border-subtle)",
                       fontSize: "0.78rem",
+                      flexWrap: "wrap",
+                      gap: "0.5rem",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--text-secondary)" }}>
-                      <FileText size={13} color="var(--brand-blue)" />
-                      <span>
-                        Evidence: <strong style={{ color: "#cbd5e1" }}>{firstEvidence.filename || "Bid Submission"}</strong>
-                        {firstEvidence.page_number && ` · Page ${firstEvidence.page_number}`}
-                      </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+                      <span style={{ color: "var(--text-muted)", fontSize: "0.74rem" }}>Cited Evidence:</span>
+                      {f.linked_evidence.map((ev, evIdx) => (
+                        <button
+                          key={evIdx}
+                          type="button"
+                          className="ent-btn ent-btn-ghost ent-btn-sm"
+                          onClick={() => onInspectEvidence(ev)}
+                          style={{
+                            padding: "2px 8px",
+                            fontSize: "0.72rem",
+                            border: "1px solid var(--border-subtle)",
+                            background: "rgba(59, 130, 246, 0.08)",
+                          }}
+                        >
+                          <FileText size={11} color="var(--brand-blue)" />
+                          <span>
+                            {ev.filename || "Bid Document"} (p. {ev.page_number})
+                          </span>
+                        </button>
+                      ))}
                     </div>
 
                     <button
                       type="button"
                       className="ent-btn ent-btn-ghost ent-btn-sm"
-                      onClick={() => onInspectEvidence(firstEvidence)}
+                      onClick={() => onInspectEvidence(f.linked_evidence[0])}
                     >
-                      <FileSearch size={13} /> Inspect Evidence
+                      <FileSearch size={13} /> Inspect Primary Evidence
                     </button>
                   </div>
                 )}

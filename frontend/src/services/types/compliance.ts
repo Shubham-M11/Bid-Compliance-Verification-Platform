@@ -194,6 +194,19 @@ export interface OfficerDecisionResponse {
   status_summary: string;
 }
 
+export interface SampleBidMetadata {
+  sample_id: string;
+  filename: string;
+  name: string;
+  bidder_name: string;
+  tender_ref: string;
+  category: string;
+  description: string;
+  expected_score: number;
+  expected_risk: string;
+  primary_rule: string;
+}
+
 export interface BidMetadata {
   tender_ref_number?: string | null;
   expected_bidder_name?: string | null;

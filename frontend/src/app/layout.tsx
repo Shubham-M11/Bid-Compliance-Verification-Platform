@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "GeM Bid Compliance Verification Platform | SIH 2026",
+  title: "GeM Bid Compliance Verification Platform — Decision Support System",
   description:
-    "AI-Powered Integrated Bid Compliance Verification Platform for GeM Procurement (SIH 2026 Problem Statement SIH26100)",
+    "Deterministic procurement compliance verification and evidence-based decision support.",
 };
 
 export default function RootLayout({

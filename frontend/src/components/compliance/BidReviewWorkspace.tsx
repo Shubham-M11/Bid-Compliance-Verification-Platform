@@ -3,17 +3,32 @@
 import React, { useEffect, useState } from "react";
 import {
   AlertCircle,
+  FileCheck2,
+  FileText,
   FileUp,
+  FolderOpen,
   Loader2,
+  RotateCcw,
+  ShieldAlert,
+  ShieldCheck,
+  Sparkles,
   UploadCloud,
   X,
 } from "lucide-react";
-import { getCompliancePresets, uploadDocument, verifyCompliance, verifyDocument } from "@/services/api";
+import {
+  getCompliancePresets,
+  getSampleBids,
+  uploadDocument,
+  verifyCompliance,
+  verifyDocument,
+  verifySampleBid,
+} from "@/services/api";
 import type {
   CompositeVerificationRequest,
   CompositeVerificationResponse,
   EvidenceItem,
   PresetComplianceScenario,
+  SampleBidMetadata,
 } from "@/services/types/compliance";
 
 import BidSummaryHeader from "./BidSummaryHeader";
@@ -156,6 +171,7 @@ const FALLBACK_PRESETS: PresetComplianceScenario[] = [
 
 export default function BidReviewWorkspace() {
   const [presets, setPresets] = useState<PresetComplianceScenario[]>(FALLBACK_PRESETS);
+  const [sampleBids, setSampleBids] = useState<SampleBidMetadata[]>([]);
   const [activePresetId, setActivePresetId] = useState<string | null>(
     "scn_corporate_compliant"
   );
@@ -173,6 +189,7 @@ export default function BidReviewWorkspace() {
   const [activeEvidence, setActiveEvidence] = useState<EvidenceItem | null>(null);
   const [manualModalOpen, setManualModalOpen] = useState<boolean>(false);
   const [uploadModalOpen, setUploadModalOpen] = useState<boolean>(false);
+  const [uploadModalTab, setUploadModalTab] = useState<"samples" | "upload">("samples");
   const [uploadLoading, setUploadLoading] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -192,6 +209,15 @@ export default function BidReviewWorkspace() {
         }
       } catch {
         runPreset(FALLBACK_PRESETS[0]);
+      }
+
+      try {
+        const samples = await getSampleBids();
+        if (samples && samples.length > 0) {
+          setSampleBids(samples);
+        }
+      } catch {
+        // Sample bids will fall back gracefully
       }
     }
     init();
@@ -255,6 +281,29 @@ export default function BidReviewWorkspace() {
     }
   };
 
+  const handleSelectSampleBid = async (sample: SampleBidMetadata) => {
+    setActivePresetId(null);
+    setUploadLoading(true);
+    setUploadError(null);
+    setIsLoading(true);
+    setError(null);
+    setActiveBidderName(sample.bidder_name);
+    setActiveTenderRef(sample.tender_ref);
+
+    try {
+      const res = await verifySampleBid(sample.sample_id);
+      setVerificationResult(res);
+      setUploadModalOpen(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to process sample PDF document";
+      setUploadError(msg);
+      setError(msg);
+    } finally {
+      setUploadLoading(false);
+      setIsLoading(false);
+    }
+  };
+
   const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0]) return;
     const file = e.target.files[0];
@@ -297,6 +346,14 @@ export default function BidReviewWorkspace() {
     }
   };
 
+  const handleClearReview = () => {
+    setVerificationResult(null);
+    setActivePresetId(null);
+    setError(null);
+    setStatutoryDrawerOpen(false);
+    setEvidenceDrawerOpen(false);
+  };
+
   const openStatutoryDrawer = (type: "gstin" | "pan" | "udyam" | "oem") => {
     setStatutoryDrawerTab(type);
     setStatutoryDrawerOpen(true);
@@ -309,30 +366,33 @@ export default function BidReviewWorkspace() {
 
   return (
     <div>
-      {/* Demo Scenario & Upload Bar */}
+      {/* Top Controls: Preset Scenarios & Action Buttons */}
       <DemoScenarioBar
         presets={presets}
         activePresetId={activePresetId}
         onSelectPreset={runPreset}
+        onUploadClick={() => {
+          setUploadModalTab("samples");
+          setUploadModalOpen(true);
+        }}
         onOpenManualModal={() => setManualModalOpen(true)}
-        onUploadClick={() => setUploadModalOpen(true)}
         isLoading={isLoading}
       />
 
-      {/* Error Alert */}
+      {/* Global Error Banner */}
       {error && (
         <div
           style={{
-            padding: "0.85rem 1.15rem",
+            padding: "0.75rem 1rem",
             background: "var(--status-critical-surface)",
             border: "1px solid var(--status-critical-border)",
             borderRadius: "var(--radius-md)",
             color: "var(--status-critical-text)",
             fontSize: "0.84rem",
-            marginBottom: "1.25rem",
             display: "flex",
             alignItems: "center",
-            gap: "0.6rem",
+            gap: "0.5rem",
+            marginBottom: "1.25rem",
           }}
         >
           <AlertCircle size={16} />
@@ -343,7 +403,7 @@ export default function BidReviewWorkspace() {
       )}
 
       {/* Main Review Workspace */}
-      {verificationResult && (
+      {verificationResult ? (
         <>
           {/* Level 1: Bid Summary & Priority Score */}
           <BidSummaryHeader
@@ -359,6 +419,7 @@ export default function BidReviewWorkspace() {
               const current = presets.find((p) => p.id === activePresetId) || presets[0];
               runPreset(current);
             }}
+            onClear={handleClearReview}
             isLoading={isLoading}
           />
 
@@ -385,6 +446,8 @@ export default function BidReviewWorkspace() {
             verificationId={verificationResult.verification_id}
             findings={verificationResult.findings}
             score={verificationResult.overall_score}
+            bidderName={activeBidderName}
+            tenderRefNumber={activeTenderRef}
           />
 
           {/* Level 5: Cross-Entity Consistency Table */}
@@ -399,6 +462,48 @@ export default function BidReviewWorkspace() {
             onInspectEvidence={openEvidenceDrawer}
           />
         </>
+      ) : (
+        !isLoading && (
+          /* Clean Empty State */
+          <div
+            className="ent-card"
+            style={{
+              textAlign: "center",
+              padding: "3.5rem 2rem",
+              background: "var(--bg-surface)",
+              border: "2px dashed var(--border-subtle)",
+              borderRadius: "var(--radius-lg)",
+              marginTop: "1.5rem",
+            }}
+          >
+            <ShieldCheck size={48} color="var(--brand-blue)" style={{ margin: "0 auto 1rem auto" }} />
+            <h3 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#ffffff", marginBottom: "0.5rem" }}>
+              Procurement Review Workspace Ready
+            </h3>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", maxWidth: "560px", margin: "0 auto 1.5rem auto", lineHeight: 1.5 }}>
+              Select a pre-loaded evaluation scenario from the presets bar above, load a sample bid PDF fixture, or upload a custom tender document to begin statutory verification.
+            </p>
+            <div style={{ display: "flex", justifyContent: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="ent-btn ent-btn-primary"
+                onClick={() => {
+                  setUploadModalTab("samples");
+                  setUploadModalOpen(true);
+                }}
+              >
+                <FolderOpen size={14} /> Select Sample Bid PDF
+              </button>
+              <button
+                type="button"
+                className="ent-btn ent-btn-secondary"
+                onClick={() => runPreset(presets[0])}
+              >
+                <Sparkles size={14} /> Load Baseline Preset
+              </button>
+            </div>
+          </div>
+        )
       )}
 
       {/* Level 5: Statutory Details Drawer */}
@@ -424,10 +529,10 @@ export default function BidReviewWorkspace() {
         isLoading={isLoading}
       />
 
-      {/* Upload Bid Document Modal */}
+      {/* Upload & Sample PDF Document Modal */}
       {uploadModalOpen && (
         <div className="ent-modal-overlay" onClick={() => setUploadModalOpen(false)}>
-          <div className="ent-modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="ent-modal-content" style={{ maxWidth: "720px" }} onClick={(e) => e.stopPropagation()}>
             <div
               style={{
                 display: "flex",
@@ -440,10 +545,10 @@ export default function BidReviewWorkspace() {
             >
               <div>
                 <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#ffffff" }}>
-                  Upload Bid Submission Document
+                  Load Bid Submission Document
                 </h3>
                 <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
-                  Upload a PDF bid document to perform automated statutory extraction & compliance evaluation
+                  Select a pre-loaded evaluation PDF scenario or upload your own tender bid PDF.
                 </p>
               </div>
               <button
@@ -452,6 +557,24 @@ export default function BidReviewWorkspace() {
                 onClick={() => setUploadModalOpen(false)}
               >
                 <X size={15} />
+              </button>
+            </div>
+
+            {/* Modal Tabs */}
+            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+              <button
+                type="button"
+                className={`ent-btn ${uploadModalTab === "samples" ? "ent-btn-primary" : "ent-btn-secondary"} ent-btn-sm`}
+                onClick={() => setUploadModalTab("samples")}
+              >
+                <FolderOpen size={13} /> Pre-Loaded Evaluation Scenarios ({sampleBids.length || 8})
+              </button>
+              <button
+                type="button"
+                className={`ent-btn ${uploadModalTab === "upload" ? "ent-btn-primary" : "ent-btn-secondary"} ent-btn-sm`}
+                onClick={() => setUploadModalTab("upload")}
+              >
+                <FileUp size={13} /> Upload Local PDF File
               </button>
             </div>
 
@@ -470,35 +593,98 @@ export default function BidReviewWorkspace() {
               </div>
             )}
 
-            <div
-              style={{
-                border: "2px dashed var(--border-medium)",
-                borderRadius: "var(--radius-md)",
-                padding: "2.5rem 1.5rem",
-                textAlign: "center",
-                background: "var(--bg-surface)",
-              }}
-            >
-              <UploadCloud size={36} color="var(--brand-blue)" style={{ margin: "0 auto 0.75rem auto" }} />
-              <div style={{ fontSize: "0.92rem", fontWeight: 600, color: "#ffffff", marginBottom: "0.35rem" }}>
-                Select Bid Document (PDF)
+            {/* Tab 1: Sample Bids Grid */}
+            {uploadModalTab === "samples" && (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(310px, 1fr))",
+                  gap: "0.65rem",
+                  maxHeight: "380px",
+                  overflowY: "auto",
+                  paddingRight: "4px",
+                }}
+              >
+                {sampleBids.map((sample) => (
+                  <button
+                    key={sample.sample_id}
+                    type="button"
+                    onClick={() => handleSelectSampleBid(sample)}
+                    disabled={uploadLoading}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      padding: "0.75rem 0.95rem",
+                      background: "var(--bg-surface)",
+                      border: "1px solid var(--border-subtle)",
+                      borderRadius: "var(--radius-sm)",
+                      color: "#ffffff",
+                      cursor: uploadLoading ? "not-allowed" : "pointer",
+                      textAlign: "left",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center", marginBottom: "4px" }}>
+                      <span style={{ fontWeight: 700, fontSize: "0.82rem", color: "#ffffff" }}>
+                        {sample.name}
+                      </span>
+                      <span
+                        className={`ent-badge ${
+                          sample.expected_score >= 85
+                            ? "ent-badge-success"
+                            : sample.expected_score >= 60
+                            ? "ent-badge-warning"
+                            : "ent-badge-critical"
+                        }`}
+                        style={{ fontSize: "0.65rem", padding: "1px 6px" }}
+                      >
+                        {sample.expected_score}/100 · {sample.expected_risk.replace("_", " ")}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: "0.72rem", color: "var(--brand-blue)", marginBottom: "3px" }}>
+                      {sample.bidder_name} ({sample.filename})
+                    </div>
+                    <p style={{ fontSize: "0.7rem", color: "var(--text-muted)", lineHeight: 1.35, margin: 0 }}>
+                      {sample.description}
+                    </p>
+                  </button>
+                ))}
               </div>
-              <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginBottom: "1.25rem" }}>
-                Supports digital PDFs and scanned certificates (up to 10 MB).
-              </p>
+            )}
 
-              <label className="ent-btn ent-btn-primary" style={{ cursor: "pointer" }}>
-                <FileUp size={14} />
-                <span>{uploadLoading ? "Analyzing Document..." : "Browse Files"}</span>
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleDocumentUpload}
-                  disabled={uploadLoading}
-                  style={{ display: "none" }}
-                />
-              </label>
-            </div>
+            {/* Tab 2: Custom Local PDF Upload */}
+            {uploadModalTab === "upload" && (
+              <div
+                style={{
+                  border: "2px dashed var(--border-medium)",
+                  borderRadius: "var(--radius-md)",
+                  padding: "2.5rem 1.5rem",
+                  textAlign: "center",
+                  background: "var(--bg-surface)",
+                }}
+              >
+                <UploadCloud size={36} color="var(--brand-blue)" style={{ margin: "0 auto 0.75rem auto" }} />
+                <div style={{ fontSize: "0.92rem", fontWeight: 600, color: "#ffffff", marginBottom: "0.35rem" }}>
+                  Select Custom Bid Document (PDF)
+                </div>
+                <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginBottom: "1.25rem" }}>
+                  Supports digital PDFs and scanned certificates (up to 10 MB).
+                </p>
+
+                <label className="ent-btn ent-btn-primary" style={{ cursor: "pointer" }}>
+                  <FileUp size={14} />
+                  <span>{uploadLoading ? "Analyzing Document..." : "Browse Files"}</span>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleDocumentUpload}
+                    disabled={uploadLoading}
+                    style={{ display: "none" }}
+                  />
+                </label>
+              </div>
+            )}
 
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1.25rem" }}>
               <button
@@ -507,7 +693,7 @@ export default function BidReviewWorkspace() {
                 onClick={() => setUploadModalOpen(false)}
                 disabled={uploadLoading}
               >
-                Cancel
+                Close
               </button>
             </div>
           </div>

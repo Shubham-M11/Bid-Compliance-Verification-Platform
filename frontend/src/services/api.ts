@@ -15,6 +15,7 @@ import type {
   PANValidationRequest,
   PANValidationResponse,
   PresetComplianceScenario,
+  SampleBidMetadata,
   ScoringPolicy,
   UdyamValidationRequest,
   UdyamValidationResponse,
@@ -25,6 +26,8 @@ export interface HealthResponse {
   app_name: string;
   version: string;
   environment: string;
+  ocr_available?: boolean;
+  ocr_engine?: string;
   timestamp: string;
 }
 
@@ -565,4 +568,46 @@ export async function verifyDocument(
   }
 }
 
+/**
+ * Retrieve list of pre-configured sample bid PDF scenarios.
+ * Calls GET /api/v1/compliance/sample-bids
+ */
+export async function getSampleBids(): Promise<SampleBidMetadata[]> {
+  const url = `${API_BASE_URL}/api/v1/compliance/sample-bids`;
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+    return data as SampleBidMetadata[];
+  } catch (error: unknown) {
+    throw new Error(formatNetworkError(error, "Failed to fetch sample bids"));
+  }
+}
+
+/**
+ * Execute end-to-end verification on a pre-loaded sample bid PDF.
+ * Calls POST /api/v1/compliance/verify-sample/{sample_id}
+ */
+export async function verifySampleBid(
+  sampleId: string
+): Promise<CompositeVerificationResponse> {
+  const url = `${API_BASE_URL}/api/v1/compliance/verify-sample/${encodeURIComponent(sampleId)}`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { Accept: "application/json" },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+    return data as CompositeVerificationResponse;
+  } catch (error: unknown) {
+    throw new Error(formatNetworkError(error, `Failed to verify sample bid '${sampleId}'`));
+  }
+}
+
 export { API_BASE_URL };
+

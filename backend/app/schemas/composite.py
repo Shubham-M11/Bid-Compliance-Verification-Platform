@@ -285,6 +285,21 @@ class ExtractedEntitiesSummary(BaseModel):
     date_candidates: List[ExtractedEntityItem] = Field(default_factory=list)
 
 
+class SampleBidMetadata(BaseModel):
+    """Metadata describing a pre-loaded sample bid PDF for evaluation and testing."""
+    sample_id: str = Field(..., description="Unique identifier for the sample bid")
+    filename: str = Field(..., description="Sample PDF filename in backend/sample_bids/")
+    name: str = Field(..., description="Human-readable title of the scenario")
+    bidder_name: str = Field(..., description="Expected legal name of the bidder")
+    tender_ref: str = Field(..., description="Expected tender reference number")
+    category: str = Field(..., description="Evaluation category")
+    description: str = Field(..., description="Brief scenario overview for officers and judges")
+    expected_score: int = Field(..., description="Baseline expected score from deterministic evaluation")
+    expected_risk: str = Field(..., description="Expected risk tier")
+    primary_rule: str = Field(..., description="Primary rule or key characteristic verified")
+
+
+
 # ==============================================
 # Configurable Scoring Policy
 # ==============================================

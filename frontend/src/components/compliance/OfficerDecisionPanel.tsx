@@ -11,6 +11,7 @@ import {
   History,
   Info,
   Loader2,
+  Printer,
   Send,
   ShieldAlert,
   ShieldCheck,
@@ -29,12 +30,16 @@ interface OfficerDecisionPanelProps {
   verificationId: string;
   findings: ComplianceFinding[];
   score: number;
+  bidderName?: string;
+  tenderRefNumber?: string;
 }
 
 export default function OfficerDecisionPanel({
   verificationId,
   findings,
   score,
+  bidderName,
+  tenderRefNumber,
 }: OfficerDecisionPanelProps) {
   const [officerName, setOfficerName] = useState("S. K. Verma");
   const [officerDesignation, setOfficerDesignation] = useState("Senior Procurement Evaluation Officer");
@@ -203,13 +208,23 @@ export default function OfficerDecisionPanel({
             </div>
           )}
 
-          <button
-            type="button"
-            className="ent-btn ent-btn-secondary ent-btn-sm"
-            onClick={() => setRecordedDecision(null)}
-          >
-            <History size={13} /> Update / Record Another Decision
-          </button>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="ent-btn ent-btn-secondary ent-btn-sm"
+              onClick={() => setRecordedDecision(null)}
+            >
+              <History size={13} /> Update / Record Another Decision
+            </button>
+            <button
+              type="button"
+              className="ent-btn ent-btn-primary ent-btn-sm"
+              onClick={() => window.print()}
+              title="Print official decision audit summary sheet"
+            >
+              <Printer size={13} /> Print / Export Audit Summary
+            </button>
+          </div>
         </div>
       ) : (
         /* Decision Entry Form */

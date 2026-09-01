@@ -396,3 +396,45 @@ class TestTask3DEndToEndIntegration:
 
         assert response.status_code == 400
         assert "Allowed formats: PDF" in response.json()["detail"]
+
+    def test_list_sample_bids_endpoint(self):
+        """Test listing available pre-configured sample bids."""
+        response = client.get("/api/v1/compliance/sample-bids")
+        assert response.status_code == 200
+        samples = response.json()
+        assert len(samples) >= 8
+        assert any(s["sample_id"] == "sample_a_corporate" for s in samples)
+        assert any(s["sample_id"] == "sample_e_expired_maf" for s in samples)
+
+    def test_verify_sample_bid_endpoint_compliant(self):
+        """Test direct verification of sample_a_corporate."""
+        response = client.post("/api/v1/compliance/verify-sample/sample_a_corporate")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["overall_score"] == 100
+        assert data["risk_level"] == RiskLevel.LOW_RISK.value
+        assert data["statutory_verifications"]["gstin"]["deterministic"]["is_format_valid"] is True
+
+    def test_verify_sample_bid_endpoint_expired_maf(self):
+        """Test direct verification of sample_e_expired_maf with anti-double-counting."""
+        response = client.post("/api/v1/compliance/verify-sample/sample_e_expired_maf")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["overall_score"] == 75
+        assert data["risk_level"] == RiskLevel.HIGH_RISK.value
+        assert any(b["rule_id"] == "STAT-OEM-01" and b["is_primary_penalty"] is True for b in data["score_breakdown"])
+
+    def test_verify_sample_bid_not_found(self):
+        """Test error when requesting nonexistent sample id."""
+        response = client.post("/api/v1/compliance/verify-sample/nonexistent_sample")
+        assert response.status_code == 404
+
+    def test_health_check_ocr_status_metadata(self):
+        """Test that health check exposes OCR readiness metadata."""
+        response = client.get("/api/health")
+        assert response.status_code == 200
+        data = response.json()
+        assert "ocr_available" in data
+        assert "ocr_engine" in data
+        assert isinstance(data["ocr_available"], bool)
+

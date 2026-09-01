@@ -9,6 +9,7 @@ import {
   FileText,
   Info,
   RefreshCw,
+  RotateCcw,
   ShieldAlert,
   ShieldCheck,
   XCircle,
@@ -28,6 +29,7 @@ interface BidSummaryHeaderProps {
   disclaimer: string;
   issueCount: number;
   onRefresh?: () => void;
+  onClear?: () => void;
   isLoading?: boolean;
 }
 
@@ -41,6 +43,7 @@ export default function BidSummaryHeader({
   disclaimer,
   issueCount,
   onRefresh,
+  onClear,
   isLoading = false,
 }: BidSummaryHeaderProps) {
   const getStatusBadge = (status: CompositeStatus) => {
@@ -160,6 +163,18 @@ export default function BidSummaryHeader({
               title="Re-run compliance evaluation"
             >
               <RefreshCw size={13} className={isLoading ? "spin" : ""} />
+            </button>
+          )}
+          {onClear && (
+            <button
+              type="button"
+              className="ent-btn ent-btn-secondary ent-btn-sm"
+              onClick={onClear}
+              disabled={isLoading}
+              title="Clear current review and reset workspace"
+              style={{ color: "var(--text-muted)" }}
+            >
+              <RotateCcw size={13} /> Reset Review
             </button>
           )}
         </div>
