@@ -199,6 +199,22 @@ MOCK_PAN_DB: Dict[str, PANRegistryRecord] = {
         category="Limited Liability Partnership",
         last_updated="2026-05-12",
     ),
+    "ABCHC1234H": PANRegistryRecord(
+        full_name="CHOPRA HINDU UNDIVIDED FAMILY",
+        pan_status="Active",
+        entity_type=PANEntityType.HUF,
+        aadhaar_seeding_status="Not Applicable (HUF)",
+        category="Hindu Undivided Family",
+        last_updated="2026-06-15",
+    ),
+    "ABCTT1234T": PANRegistryRecord(
+        full_name="TAGORE EDUCATIONAL TRUST",
+        pan_status="Active",
+        entity_type=PANEntityType.TRUST,
+        aadhaar_seeding_status="Not Applicable (Trust)",
+        category="Registered Trust",
+        last_updated="2026-04-18",
+    ),
 }
 
 

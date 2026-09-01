@@ -269,6 +269,29 @@ export interface GSTINValidationResponse {
   disclaimer: string;
 }
 
+export interface PANSegmentItem {
+  segment_name: string;
+  characters: string;
+  position_range: string;
+  is_valid: boolean;
+  description: string;
+}
+
+export interface PANStructureBreakdown {
+  series_segment: PANSegmentItem;
+  entity_segment: PANSegmentItem;
+  name_initial_segment: PANSegmentItem;
+  sequential_segment: PANSegmentItem;
+  suffix_segment: PANSegmentItem;
+}
+
+export interface PANNormalizationDetails {
+  raw_input: string;
+  normalized_value: string;
+  is_normalized: boolean;
+  normalization_notes: string[];
+}
+
 export interface PANValidationRequest {
   pan: string;
   expected_legal_name?: string | null;
@@ -276,20 +299,22 @@ export interface PANValidationRequest {
 
 export interface PANDeterministicResult {
   is_format_valid: boolean;
-  entity_type_char?: string | null;
+  entity_type_code?: string | null;
   entity_type: PANEntityType;
-  entity_type_description?: string | null;
+  entity_type_label?: string | null;
   fifth_character?: string | null;
-  expected_name_provided: boolean;
-  name_matches_fifth_char?: boolean | null;
+  name_consistency_signal?: string | null;
+  name_consistency_note?: string | null;
   validation_errors: string[];
+  structure_breakdown?: PANStructureBreakdown | null;
+  normalization?: PANNormalizationDetails | null;
 }
 
 export interface PANRegistryRecord {
   full_name: string;
   pan_status: string;
   entity_type: PANEntityType;
-  aadhaar_seeding_status: string;
+  aadhaar_seeding_status?: string | null;
   category: string;
   last_updated?: string | null;
 }
@@ -309,6 +334,28 @@ export interface PANValidationResponse {
   overall_status: ValidationStatus;
   is_live_government_source: boolean;
   disclaimer: string;
+}
+
+export interface UdyamSegmentItem {
+  segment_name: string;
+  characters: string;
+  position_range: string;
+  is_valid: boolean;
+  description: string;
+}
+
+export interface UdyamStructureBreakdown {
+  prefix_segment: UdyamSegmentItem;
+  state_segment: UdyamSegmentItem;
+  district_segment: UdyamSegmentItem;
+  serial_segment: UdyamSegmentItem;
+}
+
+export interface UdyamNormalizationDetails {
+  raw_input: string;
+  normalized_value: string;
+  is_normalized: boolean;
+  normalization_notes: string[];
 }
 
 export interface UdyamValidationRequest {
@@ -331,8 +378,10 @@ export interface UdyamDeterministicResult {
   state_code?: string | null;
   state_name?: string | null;
   district_code?: string | null;
-  serial_number?: string | null;
+  sequential_id?: string | null;
   validation_errors: string[];
+  structure_breakdown?: UdyamStructureBreakdown | null;
+  normalization?: UdyamNormalizationDetails | null;
 }
 
 export interface UdyamRegistryRecord {

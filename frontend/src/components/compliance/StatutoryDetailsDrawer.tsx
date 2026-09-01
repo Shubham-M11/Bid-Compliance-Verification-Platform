@@ -346,51 +346,116 @@ export default function StatutoryDetailsDrawer({
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-                  <div className="ent-card" style={{ background: "var(--bg-surface)" }}>
+                  {/* Visual 5-Segment PAN Breakdown */}
+                  <div className="ent-card" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}>
                     <div className="ent-section-title" style={{ fontSize: "0.85rem", marginBottom: "0.75rem" }}>
                       <Cpu size={15} color="var(--brand-blue)" />
-                      Deterministic PAN Decoding
+                      10-Character PAN Structure Breakdown
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.82rem" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>Input PAN</span>
-                        <code style={{ color: "#ffffff", fontWeight: 600 }}>{pan.pan}</code>
+
+                    {/* Segment Badges */}
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "0.4rem",
+                        padding: "0.75rem",
+                        background: "var(--bg-app)",
+                        borderRadius: "var(--radius-md)",
+                        border: "1px solid var(--border-subtle)",
+                        marginBottom: "0.85rem",
+                        fontFamily: "monospace",
+                        fontSize: "0.95rem",
+                        fontWeight: 700,
+                      }}
+                    >
+                      <div style={{ padding: "0.35rem 0.55rem", background: "rgba(59, 130, 246, 0.15)", border: "1px solid rgba(59, 130, 246, 0.3)", borderRadius: "var(--radius-sm)", color: "#93c5fd", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 500 }}>Series (1-3)</div>
+                        <div>{pan.pan.slice(0, 3)}</div>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>10-Character Structure</span>
+                      <div style={{ padding: "0.35rem 0.55rem", background: "rgba(168, 85, 247, 0.15)", border: "1px solid rgba(168, 85, 247, 0.3)", borderRadius: "var(--radius-sm)", color: "#c084fc", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 500 }}>Entity (4)</div>
+                        <div>{pan.pan[3] || "—"}</div>
+                      </div>
+                      <div style={{ padding: "0.35rem 0.55rem", background: "rgba(234, 179, 8, 0.15)", border: "1px solid rgba(234, 179, 8, 0.3)", borderRadius: "var(--radius-sm)", color: "#fde047", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 500 }}>Initial (5)</div>
+                        <div>{pan.pan[4] || "—"}</div>
+                      </div>
+                      <div style={{ padding: "0.35rem 0.55rem", background: "rgba(34, 197, 94, 0.15)", border: "1px solid rgba(34, 197, 94, 0.3)", borderRadius: "var(--radius-sm)", color: "#86efac", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 500 }}>Serial (6-9)</div>
+                        <div>{pan.pan.slice(5, 9)}</div>
+                      </div>
+                      <div style={{ padding: "0.35rem 0.55rem", background: "rgba(148, 163, 184, 0.15)", border: "1px solid rgba(148, 163, 184, 0.3)", borderRadius: "var(--radius-sm)", color: "#cbd5e1", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 500 }}>Suffix (10)</div>
+                        <div>{pan.pan[9] || "—"}</div>
+                      </div>
+                    </div>
+
+                    {/* Segment Details Table */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem", fontSize: "0.8rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>1-3: Alphabetic Series</span>
+                        <span style={{ color: "#cbd5e1", fontWeight: 500 }}>{pan.pan.slice(0, 3)} (Sequence prefix)</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>4: Entity Classification</span>
+                        <span style={{ color: "#c084fc", fontWeight: 600 }}>
+                          {pan.deterministic.entity_type} ({pan.deterministic.entity_type_label || pan.deterministic.entity_type})
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>5: Name Initial Signal</span>
                         <span>
-                          {pan.deterministic.is_format_valid ? (
-                            <span className="ent-badge ent-badge-success">Valid Regex</span>
+                          {pan.deterministic.name_consistency_signal === "MATCH" ? (
+                            <span className="ent-badge ent-badge-success">'{pan.deterministic.fifth_character}' Consistent</span>
+                          ) : pan.deterministic.name_consistency_signal === "MISMATCH" ? (
+                            <span className="ent-badge ent-badge-warning">'{pan.deterministic.fifth_character}' Mismatch</span>
                           ) : (
-                            <span className="ent-badge ent-badge-critical">Invalid Format</span>
+                            <span className="ent-badge ent-badge-neutral">'{pan.deterministic.fifth_character || "—"}' (Not Evaluated)</span>
                           )}
                         </span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>4th Character Entity Type</span>
-                        <span style={{ color: "#cbd5e1" }}>
-                          {pan.deterministic.entity_type} ({pan.deterministic.entity_type_description || "Decoded"})
-                        </span>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>6-9: Sequential Number</span>
+                        <span style={{ color: "#cbd5e1" }}>{pan.pan.slice(5, 9)} (Numeric sequence)</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>5th Char Name Consistency</span>
-                        <span>
-                          {pan.deterministic.name_matches_fifth_char === true ? (
-                            <span className="ent-badge ent-badge-success">Consistent</span>
-                          ) : pan.deterministic.name_matches_fifth_char === false ? (
-                            <span className="ent-badge ent-badge-warning">Mismatch</span>
-                          ) : (
-                            <span className="ent-badge ent-badge-neutral">Not Evaluated</span>
-                          )}
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>10: Final Character / Suffix</span>
+                        <span style={{ color: "#94a3b8" }}>
+                          '{pan.pan[9] || "—"}' (Alphabetic Identifier Suffix — No Checksum per ITD Spec)
                         </span>
                       </div>
                     </div>
+
+                    {/* Normalization Provenance Notice if applied */}
+                    {pan.deterministic.normalization?.is_normalized && (
+                      <div
+                        style={{
+                          marginTop: "0.75rem",
+                          padding: "0.5rem 0.75rem",
+                          background: "rgba(59, 130, 246, 0.08)",
+                          border: "1px solid rgba(59, 130, 246, 0.2)",
+                          borderRadius: "var(--radius-sm)",
+                          fontSize: "0.76rem",
+                          color: "#93c5fd",
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, marginBottom: "0.2rem" }}>Auditable Input Normalization:</div>
+                        <div style={{ color: "var(--text-secondary)" }}>Raw Match: <code>{pan.deterministic.normalization.raw_input}</code></div>
+                        <ul style={{ margin: "0.25rem 0 0 1rem", padding: 0 }}>
+                          {pan.deterministic.normalization.normalization_notes.map((note, idx) => (
+                            <li key={idx}>{note}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="ent-card" style={{ background: "var(--bg-surface)" }}>
+                  {/* Registry Lookup Section */}
+                  <div className="ent-card" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}>
                     <div className="ent-section-title" style={{ fontSize: "0.85rem", marginBottom: "0.75rem" }}>
                       <Database size={15} color="var(--brand-blue)" />
-                      Simulated PAN Registry
+                      Simulated PAN Registry Record
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.82rem" }}>
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -399,20 +464,36 @@ export default function StatutoryDetailsDrawer({
                           {pan.registry.registry_found ? (
                             <span className="ent-badge ent-badge-success">Record Found</span>
                           ) : (
-                            <span className="ent-badge ent-badge-neutral">Not in Mock DB</span>
+                            <span className="ent-badge ent-badge-neutral">Record Not Found (0-pt)</span>
                           )}
                         </span>
                       </div>
                       {pan.registry.record && (
                         <>
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <span style={{ color: "var(--text-secondary)" }}>Registered Name</span>
+                            <span style={{ color: "var(--text-secondary)" }}>Registered Legal Name</span>
                             <span style={{ color: "#93c5fd", fontWeight: 600 }}>{pan.registry.record.full_name}</span>
                           </div>
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <span style={{ color: "var(--text-secondary)" }}>Aadhaar Seeding Status</span>
-                            <span style={{ color: "#cbd5e1" }}>{pan.registry.record.aadhaar_seeding_status}</span>
+                            <span style={{ color: "var(--text-secondary)" }}>Operational Status</span>
+                            <span>
+                              {pan.registry.record.pan_status.toLowerCase() === "active" ? (
+                                <span className="ent-badge ent-badge-success">Active</span>
+                              ) : (
+                                <span className="ent-badge ent-badge-critical">{pan.registry.record.pan_status}</span>
+                              )}
+                            </span>
                           </div>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ color: "var(--text-secondary)" }}>Taxpayer Category</span>
+                            <span style={{ color: "#cbd5e1" }}>{pan.registry.record.category}</span>
+                          </div>
+                          {pan.registry.record.aadhaar_seeding_status && (
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                              <span style={{ color: "var(--text-secondary)" }}>Aadhaar Seeding Status</span>
+                              <span style={{ color: "#cbd5e1" }}>{pan.registry.record.aadhaar_seeding_status}</span>
+                            </div>
+                          )}
                         </>
                       )}
                     </div>
@@ -431,63 +512,182 @@ export default function StatutoryDetailsDrawer({
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-                  <div className="ent-card" style={{ background: "var(--bg-surface)" }}>
+                  {/* Visual 4-Segment Udyam Breakdown */}
+                  <div className="ent-card" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}>
                     <div className="ent-section-title" style={{ fontSize: "0.85rem", marginBottom: "0.75rem" }}>
                       <Cpu size={15} color="var(--brand-blue)" />
-                      Udyam Format & Geographic Decoding
+                      Udyam Registration Number Structure Breakdown
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.82rem" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>Udyam Number</span>
-                        <code style={{ color: "#ffffff", fontWeight: 600 }}>{udyam.udyam_registration_number}</code>
+
+                    {/* Segment Badges */}
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "0.4rem",
+                        padding: "0.75rem",
+                        background: "var(--bg-app)",
+                        borderRadius: "var(--radius-md)",
+                        border: "1px solid var(--border-subtle)",
+                        marginBottom: "0.85rem",
+                        fontFamily: "monospace",
+                        fontSize: "0.95rem",
+                        fontWeight: 700,
+                      }}
+                    >
+                      <div style={{ padding: "0.35rem 0.55rem", background: "rgba(59, 130, 246, 0.15)", border: "1px solid rgba(59, 130, 246, 0.3)", borderRadius: "var(--radius-sm)", color: "#93c5fd", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 500 }}>Scheme</div>
+                        <div>UDYAM</div>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>Syntax Structure</span>
-                        <span>
-                          {udyam.deterministic.is_format_valid ? (
-                            <span className="ent-badge ent-badge-success">Valid Regex</span>
-                          ) : (
-                            <span className="ent-badge ent-badge-critical">Invalid Format</span>
-                          )}
+                      <div style={{ padding: "0.35rem 0.55rem", background: "rgba(168, 85, 247, 0.15)", border: "1px solid rgba(168, 85, 247, 0.3)", borderRadius: "var(--radius-sm)", color: "#c084fc", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 500 }}>State</div>
+                        <div>{udyam.deterministic.state_code || udyam.udyam_registration_number.split("-")[1] || "—"}</div>
+                      </div>
+                      <div style={{ padding: "0.35rem 0.55rem", background: "rgba(34, 197, 94, 0.15)", border: "1px solid rgba(34, 197, 94, 0.3)", borderRadius: "var(--radius-sm)", color: "#86efac", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 500 }}>District (Parsed)</div>
+                        <div>{udyam.deterministic.district_code || udyam.udyam_registration_number.split("-")[2] || "—"}</div>
+                      </div>
+                      <div style={{ padding: "0.35rem 0.55rem", background: "rgba(234, 179, 8, 0.15)", border: "1px solid rgba(234, 179, 8, 0.3)", borderRadius: "var(--radius-sm)", color: "#fde047", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 500 }}>Serial Number</div>
+                        <div>{udyam.deterministic.sequential_id || udyam.udyam_registration_number.split("-")[3] || "—"}</div>
+                      </div>
+                    </div>
+
+                    {/* Segment Details Table */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem", fontSize: "0.8rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>Scheme Prefix</span>
+                        <span style={{ color: "#93c5fd", fontWeight: 600 }}>Ministry of MSME (Udyam)</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>State / UT Jurisdiction</span>
+                        <span style={{ color: "#cbd5e1", fontWeight: 500 }}>
+                          {udyam.deterministic.state_name || "—"} (Code: {udyam.deterministic.state_code || "—"})
                         </span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>State / District</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>District Identifier</span>
                         <span style={{ color: "#cbd5e1" }}>
-                          {udyam.deterministic.state_name || "—"} ({udyam.deterministic.district_code || "—"})
+                          Parsed registration component (District Code: {udyam.deterministic.district_code || "—"})
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "0.25rem 0" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>Sequential Registration ID</span>
+                        <span style={{ color: "#cbd5e1" }}>
+                          Enterprise Serial #{udyam.deterministic.sequential_id || "—"}
                         </span>
                       </div>
                     </div>
+
+                    {/* Normalization Provenance Notice if applied */}
+                    {udyam.deterministic.normalization?.is_normalized && (
+                      <div
+                        style={{
+                          marginTop: "0.75rem",
+                          padding: "0.5rem 0.75rem",
+                          background: "rgba(59, 130, 246, 0.08)",
+                          border: "1px solid rgba(59, 130, 246, 0.2)",
+                          borderRadius: "var(--radius-sm)",
+                          fontSize: "0.76rem",
+                          color: "#93c5fd",
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, marginBottom: "0.2rem" }}>Auditable Input Normalization:</div>
+                        <div style={{ color: "var(--text-secondary)" }}>Raw Match: <code>{udyam.deterministic.normalization.raw_input}</code></div>
+                        <ul style={{ margin: "0.25rem 0 0 1rem", padding: 0 }}>
+                          {udyam.deterministic.normalization.normalization_notes.map((note, idx) => (
+                            <li key={idx}>{note}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="ent-card" style={{ background: "var(--bg-surface)" }}>
+                  {/* Registry Record & Policy Advisories */}
+                  <div className="ent-card" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}>
                     <div className="ent-section-title" style={{ fontSize: "0.85rem", marginBottom: "0.75rem" }}>
                       <Database size={15} color="var(--brand-blue)" />
-                      MSME Tier & Procurement Advisories
+                      Simulated MSME Standing & Policy Advisories
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.82rem" }}>
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>Enterprise Name</span>
-                        <span style={{ color: "#93c5fd", fontWeight: 600 }}>
-                          {udyam.registry.record?.enterprise_name || "—"}
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>Enterprise Classification</span>
-                        <span style={{ color: "#cbd5e1" }}>
-                          {udyam.registry.record?.enterprise_tier} • {udyam.registry.record?.major_activity}
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>EMD Exemption Advisory</span>
+                        <span style={{ color: "var(--text-secondary)" }}>Record Status</span>
                         <span>
-                          {udyam.registry.record?.advisory_benefits.emd_exemption_eligible ? (
-                            <span className="ent-badge ent-badge-success">Eligible (Advisory)</span>
+                          {udyam.registry.registry_found ? (
+                            <span className="ent-badge ent-badge-success">Record Found</span>
                           ) : (
-                            <span className="ent-badge ent-badge-warning">Ineligible (Trading)</span>
+                            <span className="ent-badge ent-badge-neutral">Record Not Found (0-pt)</span>
                           )}
                         </span>
                       </div>
+                      {udyam.registry.record && (
+                        <>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ color: "var(--text-secondary)" }}>Enterprise Name</span>
+                            <span style={{ color: "#93c5fd", fontWeight: 600 }}>
+                              {udyam.registry.record.enterprise_name}
+                            </span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ color: "var(--text-secondary)" }}>Enterprise Classification</span>
+                            <span style={{ color: "#cbd5e1" }}>
+                              {udyam.registry.record.enterprise_tier} • {udyam.registry.record.major_activity}
+                            </span>
+                          </div>
+                          {udyam.registry.record.organization_type && (
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                              <span style={{ color: "var(--text-secondary)" }}>Organization Type</span>
+                              <span style={{ color: "#cbd5e1" }}>{udyam.registry.record.organization_type}</span>
+                            </div>
+                          )}
+                          {udyam.registry.record.nic_codes && udyam.registry.record.nic_codes.length > 0 && (
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                              <span style={{ color: "var(--text-secondary)" }}>Registered NIC Codes</span>
+                              <span style={{ color: "#cbd5e1" }}>{udyam.registry.record.nic_codes.join(", ")}</span>
+                            </div>
+                          )}
+
+                          {/* Tender-Dependent MSME Benefits Advisory Card */}
+                          <div
+                            style={{
+                              marginTop: "0.5rem",
+                              padding: "0.75rem",
+                              background: "rgba(59, 130, 246, 0.06)",
+                              border: "1px solid rgba(59, 130, 246, 0.2)",
+                              borderRadius: "var(--radius-sm)",
+                              fontSize: "0.76rem",
+                            }}
+                          >
+                            <div style={{ fontWeight: 600, color: "#93c5fd", marginBottom: "0.4rem" }}>
+                              Tender-Dependent MSME Procurement Advisories:
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", color: "var(--text-secondary)" }}>
+                              <div>
+                                <strong style={{ color: "#cbd5e1" }}>EMD Exemption: </strong>
+                                {udyam.registry.record.advisory_benefits.emd_exemption_eligible ? (
+                                  <span style={{ color: "#86efac" }}>Indicative Eligibility (Subject to Tender Terms)</span>
+                                ) : (
+                                  <span style={{ color: "#fca5a5" }}>Generally Ineligible for Pure Trading/Resale</span>
+                                )}
+                                <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.1rem" }}>
+                                  {udyam.registry.record.advisory_benefits.emd_exemption_advisory}
+                                </div>
+                              </div>
+                              <div>
+                                <strong style={{ color: "#cbd5e1" }}>Prior Turnover / Experience: </strong>
+                                <span style={{ color: "#cbd5e1" }}>Clause-Dependent under GFR Rule 173(i)</span>
+                                <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.1rem" }}>
+                                  {udyam.registry.record.advisory_benefits.prior_experience_advisory}
+                                </div>
+                              </div>
+                              <div>
+                                <strong style={{ color: "#cbd5e1" }}>Purchase Preference: </strong>
+                                <span style={{ color: "#cbd5e1" }}>L1+15% Band (Applicable if Tender Permits)</span>
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

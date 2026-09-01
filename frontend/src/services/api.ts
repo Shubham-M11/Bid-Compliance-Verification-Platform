@@ -275,7 +275,7 @@ export async function getGSTStateCodes(): Promise<
 
 /**
  * Validate PAN and evaluate entity type.
- * Calls POST /api/v1/statutory/pan/verify
+ * Calls POST /api/v1/statutory/pan/verify (or /api/v1/pan/verify)
  */
 export async function verifyPAN(
   request: PANValidationRequest
@@ -296,8 +296,52 @@ export async function verifyPAN(
 }
 
 /**
+ * Deterministically analyze 5-part character structure and entity classification of PAN.
+ * Calls POST /api/v1/pan/analyze-structure
+ */
+export async function analyzePANStructure(
+  pan: string,
+  expectedLegalName?: string
+) {
+  const url = `${API_BASE_URL}/api/v1/pan/analyze-structure`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pan,
+        expected_legal_name: expectedLegalName || null,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+    return data;
+  } catch (error: unknown) {
+    throw new Error(formatNetworkError(error, "Failed to analyze PAN structure"));
+  }
+}
+
+/**
+ * Retrieve reference list of Indian PAN entity classifications.
+ * Calls GET /api/v1/pan/entity-types
+ */
+export async function getPANEntityTypes(): Promise<
+  Array<{ code: string; enum_key: string; description: string }>
+> {
+  const url = `${API_BASE_URL}/api/v1/pan/entity-types`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+    return data;
+  } catch (error: unknown) {
+    throw new Error(formatNetworkError(error, "Failed to fetch PAN entity types"));
+  }
+}
+
+/**
  * Validate Udyam MSME and retrieve policy advisories.
- * Calls POST /api/v1/statutory/udyam/verify
+ * Calls POST /api/v1/statutory/udyam/verify (or /api/v1/udyam/verify)
  */
 export async function verifyUdyam(
   request: UdyamValidationRequest
@@ -314,6 +358,48 @@ export async function verifyUdyam(
     return data as UdyamValidationResponse;
   } catch (error: unknown) {
     throw new Error(formatNetworkError(error, "Failed to verify Udyam"));
+  }
+}
+
+/**
+ * Deterministically analyze 4-part segment structure of Udyam registration number.
+ * Calls POST /api/v1/udyam/analyze-structure
+ */
+export async function analyzeUdyamStructure(
+  udyamRegistrationNumber: string
+) {
+  const url = `${API_BASE_URL}/api/v1/udyam/analyze-structure`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        udyam_registration_number: udyamRegistrationNumber,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+    return data;
+  } catch (error: unknown) {
+    throw new Error(formatNetworkError(error, "Failed to analyze Udyam structure"));
+  }
+}
+
+/**
+ * Retrieve reference list of 2-letter Udyam State and UT codes.
+ * Calls GET /api/v1/udyam/state-codes
+ */
+export async function getUdyamStateCodes(): Promise<
+  Array<{ state_code: string; state_name: string }>
+> {
+  const url = `${API_BASE_URL}/api/v1/udyam/state-codes`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+    return data;
+  } catch (error: unknown) {
+    throw new Error(formatNetworkError(error, "Failed to fetch Udyam state codes"));
   }
 }
 

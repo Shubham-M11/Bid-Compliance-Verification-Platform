@@ -7,8 +7,9 @@ from app.schemas.composite import (
     ExtractedEntitiesSummary,
     ExtractedEntityItem,
 )
-from app.schemas.document import DocumentUploadResponse, PageTextEvidence
 from app.services.compliance.gst.normalizer import gstin_normalizer
+from app.services.compliance.pan.normalizer import pan_normalizer
+from app.services.compliance.udyam.normalizer import udyam_normalizer
 from app.services.compliance.luhn_mod36 import verify_gstin_checksum
 from app.services.compliance.pan_decoder import is_valid_pan_format
 from app.services.compliance.state_codes import is_valid_state_code
@@ -18,7 +19,9 @@ GSTIN_REGEX = re.compile(r"\b([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-
 GSTIN_DELIMITED_REGEX = re.compile(r"\b([0-9]{2}[\-\s][A-Z]{5}[0-9]{4}[A-Z]{1}[\-\s][1-9A-Z]{1}Z[0-9A-Z]{1})\b")
 GSTIN_PREFIX_REGEX = re.compile(r"(?:GSTIN|GST\s*No|GST\s*Registration(?:\s*No)?|GST\s*ID)[:\s]+([0-9A-Za-z\-_]{15,18})\b", re.IGNORECASE)
 PAN_REGEX = re.compile(r"\b([A-Z]{5}[0-9]{4}[A-Z]{1})\b")
+PAN_PREFIX_REGEX = re.compile(r"(?:PAN|Permanent\s*Account\s*Number|PAN\s*No|PAN\s*Card)[:\s]+([A-Za-z0-9\-\s]{10,14})\b", re.IGNORECASE)
 UDYAM_REGEX = re.compile(r"\b(UDYAM-[A-Z]{2}-[0-9]{2}-[0-9]{7})\b")
+UDYAM_LOOSE_REGEX = re.compile(r"\b(UDYAM[\s\-_/:.]+[A-Za-z]{2}[\s\-_/:.]+[0-9]{2}[\s\-_/:.]+[0-9]{7})\b", re.IGNORECASE)
 MAF_REGEX = re.compile(r"\b(MAF-[A-Z0-9\-]+|[A-Z0-9\-]+-MAF-[A-Z0-9\-]+)\b", re.IGNORECASE)
 GEM_TENDER_REGEX = re.compile(r"\b(GEM/\d{4}/[A-Z]/\d+)\b", re.IGNORECASE)
 GENERIC_TENDER_REGEX = re.compile(
@@ -166,7 +169,8 @@ class DocumentEntityExtractor:
                 continue
 
             raw_val = match.group(1).upper()
-            if raw_val in found_pans:
+            norm_val, norm_details = pan_normalizer.normalize(raw_val)
+            if norm_val in found_pans:
                 continue
 
             # Evaluate context proximity to keywords
@@ -174,11 +178,11 @@ class DocumentEntityExtractor:
             has_pan_keyword = bool(re.search(r"\b(?:PAN|Income\s+Tax|Permanent\s+Account)\b", snippet, re.IGNORECASE))
             conf = 0.95 if has_pan_keyword else 0.85
 
-            found_pans.add(raw_val)
+            found_pans.add(norm_val)
             items.append(
                 ExtractedEntityItem(
                     entity_type=EntityType.PAN,
-                    value=raw_val,
+                    value=norm_val,
                     raw_match=match.group(0),
                     document_id=document_id,
                     filename=filename,
@@ -191,24 +195,51 @@ class DocumentEntityExtractor:
                 )
             )
 
-        # 3. Extract Udyam Registration Numbers
-        for match in UDYAM_REGEX.finditer(text):
-            raw_val = match.group(1).upper()
-            items.append(
-                ExtractedEntityItem(
-                    entity_type=EntityType.UDYAM,
-                    value=raw_val,
-                    raw_match=match.group(0),
-                    document_id=document_id,
-                    filename=filename,
-                    page_number=page_number,
-                    confidence=0.98,
-                    context_snippet=self._get_context(text, match.start(), match.end()),
-                    source_type=EntitySource.DOCUMENT_EXTRACTED,
-                    extraction_method="regex_udyam",
-                    is_candidate_only=False,
+        # Contextual prefixed PAN candidates
+        for match in PAN_PREFIX_REGEX.finditer(text):
+            raw_candidate = match.group(1)
+            norm_val, norm_details = pan_normalizer.normalize(raw_candidate)
+            if len(norm_val) == 10 and is_valid_pan_format(norm_val) and norm_val not in found_pans:
+                snippet = self._get_context(text, match.start(), match.end())
+                found_pans.add(norm_val)
+                items.append(
+                    ExtractedEntityItem(
+                        entity_type=EntityType.PAN,
+                        value=norm_val,
+                        raw_match=match.group(0),
+                        document_id=document_id,
+                        filename=filename,
+                        page_number=page_number,
+                        confidence=0.92,
+                        context_snippet=snippet,
+                        source_type=EntitySource.DOCUMENT_EXTRACTED,
+                        extraction_method="ocr_normalized_regex",
+                        is_candidate_only=False,
+                    )
                 )
-            )
+
+        # 3. Extract Udyam Registration Numbers
+        found_udyams: Set[str] = set()
+        for match in list(UDYAM_REGEX.finditer(text)) + list(UDYAM_LOOSE_REGEX.finditer(text)):
+            raw_candidate = match.group(1)
+            norm_val, norm_details = udyam_normalizer.normalize(raw_candidate)
+            if norm_val not in found_udyams:
+                found_udyams.add(norm_val)
+                items.append(
+                    ExtractedEntityItem(
+                        entity_type=EntityType.UDYAM,
+                        value=norm_val,
+                        raw_match=match.group(0),
+                        document_id=document_id,
+                        filename=filename,
+                        page_number=page_number,
+                        confidence=0.98 if not norm_details.is_normalized else 0.90,
+                        context_snippet=self._get_context(text, match.start(), match.end()),
+                        source_type=EntitySource.DOCUMENT_EXTRACTED,
+                        extraction_method="regex_udyam",
+                        is_candidate_only=False,
+                    )
+                )
 
         # 4. Extract Legal / Bidder Entity Names (Treated strictly as Candidate Evidence)
         seen_names: Set[str] = set()

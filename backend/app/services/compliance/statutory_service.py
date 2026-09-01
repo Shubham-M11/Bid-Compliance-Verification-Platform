@@ -25,6 +25,8 @@ from app.schemas.statutory import (
     VerificationSource,
 )
 from app.services.compliance.gst.service import GSTModuleService, gst_module_service
+from app.services.compliance.pan.service import PANModuleService, pan_module_service
+from app.services.compliance.udyam.service import UdyamModuleService, udyam_module_service
 from app.services.compliance.luhn_mod36 import verify_gstin_checksum
 from app.services.compliance.pan_decoder import (
     check_pan_name_consistency,
@@ -106,6 +108,8 @@ class StatutoryValidationService:
         udyam_provider: Optional[BaseUdyamProvider] = None,
         oem_provider: Optional[BaseOEMProvider] = None,
         gst_service: Optional[GSTModuleService] = None,
+        pan_service: Optional[PANModuleService] = None,
+        udyam_service: Optional[UdyamModuleService] = None,
     ):
         self._gstn_provider = gstn_provider or get_gstn_provider()
         self._pan_provider = pan_provider or get_pan_provider()
@@ -113,6 +117,12 @@ class StatutoryValidationService:
         self._oem_provider = oem_provider or get_oem_provider()
         self._gst_service = gst_service or (
             GSTModuleService(provider=self._gstn_provider) if gstn_provider else gst_module_service
+        )
+        self._pan_service = pan_service or (
+            PANModuleService(provider=self._pan_provider) if pan_provider else pan_module_service
+        )
+        self._udyam_service = udyam_service or (
+            UdyamModuleService(provider=self._udyam_provider) if udyam_provider else udyam_module_service
         )
 
     # --------------------------------------------------------------------------
@@ -123,146 +133,18 @@ class StatutoryValidationService:
         return await self._gst_service.validate_gstin(req)
 
     # --------------------------------------------------------------------------
-    # PAN Validation
+    # PAN Validation (Delegated to dedicated PANModuleService)
     # --------------------------------------------------------------------------
     async def validate_pan(self, req: PANValidationRequest) -> PANValidationResponse:
-        sanitized = req.pan.strip().upper()
-        errors: List[str] = []
-
-        # 1. Deterministic Structural Validation (No PAN checksum per Indian ITD spec)
-        is_format_valid = is_valid_pan_format(sanitized)
-        entity_type_code = None
-        entity_type = PANEntityType.UNKNOWN
-        entity_type_label = None
-        fifth_char = None
-        name_signal = None
-        name_note = None
-
-        if not is_format_valid:
-            errors.append(f"PAN '{sanitized}' does not match standard 10-character syntax (format: ABCDE1234F).")
-        else:
-            entity_type_code = sanitized[3]
-            entity_type_key, entity_type_label = decode_pan_entity_type(sanitized)
-            entity_type = PANEntityType(entity_type_key)
-            fifth_char = sanitized[4]
-
-            # 5th-character name-consistency signal (only evaluated when expected name supplied)
-            name_signal, name_note = check_pan_name_consistency(sanitized, req.expected_legal_name)
-
-        deterministic_result = PANDeterministicResult(
-            is_format_valid=is_format_valid,
-            entity_type_code=entity_type_code,
-            entity_type=entity_type,
-            entity_type_label=entity_type_label,
-            fifth_character=fifth_char,
-            name_consistency_signal=name_signal,
-            name_consistency_note=name_note,
-            validation_errors=errors,
-        )
-
-        # 2. Provider Lookup
-        registry_found = False
-        registry_record = None
-        status_message = "Skipped registry lookup due to invalid format."
-        source = VerificationSource.MOCK_REGISTRY
-
-        if is_format_valid:
-            registry_found, registry_record, status_message, source = (
-                await self._pan_provider.lookup_pan(sanitized)
-            )
-
-        registry_result = PANRegistryResult(
-            registry_found=registry_found,
-            source=source,
-            record=registry_record,
-            status_message=status_message,
-        )
-
-        # 3. Overall Status Resolution
-        if not is_format_valid:
-            overall_status = ValidationStatus.INVALID_FORMAT
-        elif not registry_found:
-            overall_status = ValidationStatus.RECORD_NOT_FOUND
-        else:
-            overall_status = ValidationStatus.VALID
-
-        return PANValidationResponse(
-            pan=sanitized,
-            deterministic=deterministic_result,
-            registry=registry_result,
-            overall_status=overall_status,
-            is_live_government_source=False,
-            disclaimer=MOCK_REGISTRY_DISCLAIMER,
-        )
+        """Validate PAN via dedicated PAN domain service."""
+        return await self._pan_service.validate_pan(req)
 
     # --------------------------------------------------------------------------
-    # Udyam Validation
+    # Udyam Validation (Delegated to dedicated UdyamModuleService)
     # --------------------------------------------------------------------------
     async def validate_udyam(self, req: UdyamValidationRequest) -> UdyamValidationResponse:
-        sanitized = req.udyam_registration_number.strip().upper()
-        errors: List[str] = []
-
-        # 1. Deterministic Format Validation
-        match = UDYAM_REGEX.match(sanitized)
-        is_format_valid = bool(match)
-        state_code = None
-        state_name = None
-        district_code = None
-        sequential_id = None
-
-        if not is_format_valid:
-            errors.append(
-                f"Udyam registration number '{sanitized}' does not match standard pattern (format: UDYAM-XX-00-0000000)."
-            )
-        else:
-            state_code = match.group(1)
-            district_code = match.group(2)
-            sequential_id = match.group(3)
-            state_name = UDYAM_STATE_CODE_MAP.get(state_code, "Other / UT")
-
-        deterministic_result = UdyamDeterministicResult(
-            is_format_valid=is_format_valid,
-            state_code=state_code,
-            state_name=state_name,
-            district_code=district_code,
-            sequential_id=sequential_id,
-            validation_errors=errors,
-        )
-
-        # 2. Provider Lookup
-        registry_found = False
-        registry_record = None
-        status_message = "Skipped registry lookup due to invalid format."
-        source = VerificationSource.MOCK_REGISTRY
-
-        if is_format_valid:
-            registry_found, registry_record, status_message, source = (
-                await self._udyam_provider.lookup_udyam(sanitized)
-            )
-
-        registry_result = UdyamRegistryResult(
-            registry_found=registry_found,
-            source=source,
-            record=registry_record,
-            status_message=status_message,
-        )
-
-        # 3. Overall Status Resolution
-        if not is_format_valid:
-            overall_status = ValidationStatus.INVALID_FORMAT
-        elif not registry_found:
-            overall_status = ValidationStatus.RECORD_NOT_FOUND
-        else:
-            overall_status = ValidationStatus.VALID
-
-        return UdyamValidationResponse(
-            udyam_registration_number=sanitized,
-            deterministic=deterministic_result,
-            registry=registry_result,
-            overall_status=overall_status,
-            is_live_government_source=False,
-            disclaimer=MOCK_REGISTRY_DISCLAIMER,
-        )
+        """Validate Udyam via dedicated Udyam domain service."""
+        return await self._udyam_service.validate_udyam(req)
 
     # --------------------------------------------------------------------------
     # OEM Authorization Validation

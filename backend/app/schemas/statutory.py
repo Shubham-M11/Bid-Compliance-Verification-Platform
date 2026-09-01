@@ -201,6 +201,34 @@ class GSTINValidationResponse(BaseModel):
 # PAN Schemas
 # ==========================================
 
+class PANSegmentItem(BaseModel):
+    """Character segment in a 10-character Permanent Account Number."""
+    segment_name: str = Field(..., description="Name of the character segment")
+    characters: str = Field(..., description="Character value in the segment")
+    position_range: str = Field(..., description="1-indexed character position (e.g. '1-3', '4', '10')")
+    is_valid: bool = Field(..., description="Whether this segment conforms to statutory syntax rules")
+    description: str = Field(..., description="Factual description of this segment's decoded meaning")
+
+
+class PANStructureBreakdown(BaseModel):
+    """5-part structural breakdown of a 10-character Indian PAN."""
+    series_segment: PANSegmentItem = Field(..., description="Characters 1-3: Alphabetic series prefix (AAA-ZZZ)")
+    entity_segment: PANSegmentItem = Field(..., description="Character 4: Statutory entity classification code")
+    name_initial_segment: PANSegmentItem = Field(..., description="Character 5: Surname initial or entity name initial")
+    sequential_segment: PANSegmentItem = Field(..., description="Characters 6-9: Sequential numeric digits (0001-9999)")
+    suffix_segment: PANSegmentItem = Field(..., description="Character 10: Final character / identifier suffix (alphabetic)")
+
+
+class PANNormalizationDetails(BaseModel):
+    """Auditable normalization provenance for PAN inputs."""
+    raw_input: str = Field(..., description="Original raw candidate string as extracted or input")
+    normalized_value: str = Field(..., description="Sanitized uppercase 10-character PAN value")
+    is_normalized: bool = Field(..., description="True if any cleaning or normalization was applied")
+    normalization_notes: List[str] = Field(
+        default_factory=list, description="Itemized audit trail of applied normalization transformations"
+    )
+
+
 class PANValidationRequest(BaseModel):
     """Request payload for PAN validation."""
     pan: str = Field(..., description="10-character Permanent Account Number")
@@ -223,6 +251,12 @@ class PANDeterministicResult(BaseModel):
         default=None, description="Explanatory note regarding 5th-character initial check"
     )
     validation_errors: List[str] = Field(default_factory=list, description="Structural validation errors")
+    structure_breakdown: Optional[PANStructureBreakdown] = Field(
+        default=None, description="Detailed 5-part character breakdown"
+    )
+    normalization: Optional[PANNormalizationDetails] = Field(
+        default=None, description="Auditable normalization provenance details"
+    )
 
 
 class PANRegistryRecord(BaseModel):
@@ -259,6 +293,33 @@ class PANValidationResponse(BaseModel):
 # Udyam (MSME) Schemas
 # ==========================================
 
+class UdyamSegmentItem(BaseModel):
+    """Segment in a standard Udyam registration number."""
+    segment_name: str = Field(..., description="Name of the segment")
+    characters: str = Field(..., description="Characters in the segment")
+    position_range: str = Field(..., description="Segment descriptor range")
+    is_valid: bool = Field(..., description="Whether this segment conforms to Udyam syntax")
+    description: str = Field(..., description="Factual description of the registration component")
+
+
+class UdyamStructureBreakdown(BaseModel):
+    """4-part structural breakdown of a standard Indian Udyam registration number."""
+    prefix_segment: UdyamSegmentItem = Field(..., description="Fixed scheme prefix 'UDYAM'")
+    state_segment: UdyamSegmentItem = Field(..., description="2-letter Indian State/UT code")
+    district_segment: UdyamSegmentItem = Field(..., description="2-digit district identifier (parsed registration component)")
+    serial_segment: UdyamSegmentItem = Field(..., description="7-digit enterprise registration sequential ID")
+
+
+class UdyamNormalizationDetails(BaseModel):
+    """Auditable normalization provenance for Udyam inputs."""
+    raw_input: str = Field(..., description="Original raw candidate string as extracted or input")
+    normalized_value: str = Field(..., description="Sanitized uppercase Udyam registration number")
+    is_normalized: bool = Field(..., description="True if any cleaning or normalization was applied")
+    normalization_notes: List[str] = Field(
+        default_factory=list, description="Itemized audit trail of applied normalization transformations"
+    )
+
+
 class UdyamValidationRequest(BaseModel):
     """Request payload for Udyam Registration Number validation."""
     udyam_registration_number: str = Field(
@@ -277,6 +338,12 @@ class UdyamDeterministicResult(BaseModel):
     district_code: Optional[str] = Field(default=None, description="Extracted 2-digit district code")
     sequential_id: Optional[str] = Field(default=None, description="Extracted 7-digit registration serial")
     validation_errors: List[str] = Field(default_factory=list, description="Structural validation errors")
+    structure_breakdown: Optional[UdyamStructureBreakdown] = Field(
+        default=None, description="Detailed 4-part segment breakdown"
+    )
+    normalization: Optional[UdyamNormalizationDetails] = Field(
+        default=None, description="Auditable normalization provenance details"
+    )
 
 
 class MSMEPolicyAdvisory(BaseModel):
