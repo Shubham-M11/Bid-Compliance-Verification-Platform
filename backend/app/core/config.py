@@ -12,12 +12,14 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     API_V1_STR: str = "/api/v1"
 
-    # CORS origins: defaults to Next.js local frontend
+    # CORS origins: defaults to Next.js local frontend and cloud deployments
     BACKEND_CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3001",
+        "https://bid-compliance-verification-platform.vercel.app",
+        "https://bid-compliance-verification-platform.onrender.com",
     ]
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
@@ -37,6 +39,8 @@ class Settings(BaseSettings):
             "http://127.0.0.1:3000",
             "http://localhost:3001",
             "http://127.0.0.1:3001",
+            "https://bid-compliance-verification-platform.vercel.app",
+            "https://bid-compliance-verification-platform.onrender.com",
         ]
 
     # Database connection URL (PostgreSQL / Supabase asyncpg)
