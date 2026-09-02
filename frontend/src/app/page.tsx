@@ -29,6 +29,7 @@ export default function Home() {
   const [targetTenderForReview, setTargetTenderForReview] = useState<{
     ref: string;
     title: string;
+    triggerId: number;
   } | null>(null);
 
   const [externalReview, setExternalReview] =
@@ -52,7 +53,11 @@ export default function Home() {
   }, []);
 
   const handleStartReviewFromTender = (tenderRef: string, tenderTitle: string) => {
-    setTargetTenderForReview({ ref: tenderRef, title: tenderTitle });
+    setTargetTenderForReview({
+      ref: tenderRef,
+      title: tenderTitle,
+      triggerId: Date.now(),
+    });
     setActiveTab("reviews");
   };
 
@@ -125,6 +130,8 @@ export default function Home() {
             externalTenderRef={externalTender}
             initialTenderRef={targetTenderForReview?.ref}
             initialTenderTitle={targetTenderForReview?.title}
+            tenderTriggerId={targetTenderForReview?.triggerId}
+            onClearTargetTender={() => setTargetTenderForReview(null)}
             onNavigateToTab={(tab) => setActiveTab(tab)}
           />
         </section>

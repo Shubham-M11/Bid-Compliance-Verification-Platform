@@ -179,6 +179,8 @@ interface BidReviewWorkspaceProps {
   externalTenderRef?: string;
   initialTenderRef?: string;
   initialTenderTitle?: string;
+  tenderTriggerId?: number;
+  onClearTargetTender?: () => void;
   onNavigateToTab?: (tab: "tenders" | "documents" | "audit") => void;
 }
 
@@ -188,6 +190,8 @@ export default function BidReviewWorkspace({
   externalTenderRef,
   initialTenderRef,
   initialTenderTitle,
+  tenderTriggerId,
+  onClearTargetTender,
   onNavigateToTab,
 }: BidReviewWorkspaceProps) {
   const [presets, setPresets] = useState<PresetComplianceScenario[]>(FALLBACK_PRESETS);
@@ -242,13 +246,14 @@ export default function BidReviewWorkspace({
     }
   }, [externalReview, externalBidderName, externalTenderRef, initialTenderTitle]);
 
-  // Handle tender start context
+  // Handle tender start context from Tenders workspace
   useEffect(() => {
-    if (initialTenderRef) {
+    if (initialTenderRef && tenderTriggerId) {
       setActiveTenderRef(initialTenderRef);
       if (initialTenderTitle) setActiveTenderTitle(initialTenderTitle);
+      setNewReviewWizardOpen(true);
     }
-  }, [initialTenderRef, initialTenderTitle]);
+  }, [initialTenderRef, initialTenderTitle, tenderTriggerId]);
 
   // Run a preset scenario
   const runPreset = async (preset: PresetComplianceScenario) => {
@@ -552,10 +557,15 @@ export default function BidReviewWorkspace({
         )
       )}
 
-      {/* New Compliance Review 4-Step Wizard */}
+      {/* New Compliance Review Wizard */}
       <NewReviewWizard
         isOpen={newReviewWizardOpen}
-        onClose={() => setNewReviewWizardOpen(false)}
+        onClose={() => {
+          setNewReviewWizardOpen(false);
+          onClearTargetTender?.();
+        }}
+        initialTenderRef={initialTenderRef}
+        initialTenderTitle={initialTenderTitle}
         onReviewCreated={handleReviewCreatedFromWizard}
       />
 
