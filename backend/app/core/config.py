@@ -18,6 +18,7 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3001",
+        "https://bid-compliance-verification-platfor.vercel.app",
         "https://bid-compliance-verification-platform.vercel.app",
         "https://bid-compliance-verification-platform.onrender.com",
     ]
@@ -39,6 +40,7 @@ class Settings(BaseSettings):
             "http://127.0.0.1:3000",
             "http://localhost:3001",
             "http://127.0.0.1:3001",
+            "https://bid-compliance-verification-platfor.vercel.app",
             "https://bid-compliance-verification-platform.vercel.app",
             "https://bid-compliance-verification-platform.onrender.com",
         ]
