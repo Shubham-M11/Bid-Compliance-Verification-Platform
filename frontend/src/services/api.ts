@@ -6,6 +6,7 @@
 import type {
   CompositeVerificationRequest,
   CompositeVerificationResponse,
+  ExtractedEntitiesSummary,
   GSTINValidationRequest,
   GSTINValidationResponse,
   OEMValidationRequest,
@@ -141,6 +142,35 @@ export async function uploadDocument(file: File): Promise<DocumentUploadResponse
     return data as DocumentUploadResponse;
   } catch (error: unknown) {
     throw new Error(formatNetworkError(error, "Failed to upload document"));
+  }
+}
+
+/**
+ * Extract candidate statutory and tender entities from document evidence.
+ * Calls POST /api/v1/compliance/extract-entities
+ */
+export async function extractEntitiesFromDocuments(
+  documents: DocumentUploadResponse[]
+): Promise<ExtractedEntitiesSummary> {
+  const url = `${API_BASE_URL}/api/v1/compliance/extract-entities`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(documents),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      const errorDetail = data?.detail || `HTTP ${res.status}: ${res.statusText}`;
+      throw new Error(errorDetail);
+    }
+    return data as ExtractedEntitiesSummary;
+  } catch (error: unknown) {
+    throw new Error(formatNetworkError(error, "Failed to extract statutory entities from document"));
   }
 }
 

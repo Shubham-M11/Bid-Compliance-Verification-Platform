@@ -13,118 +13,122 @@
 }
 
 /* =========================================================
-   PRIMARY DEFAULT: LIGHT INSTITUTIONAL THEME
+   PRIMARY DEFAULT: CALM INSTITUTIONAL ENTERPRISE LIGHT THEME
    ========================================================= */
 :root,
 [data-theme="light"] {
-  --bg-app: #f4f6fa;
-  --bg-primary: #ffffff;
-  --bg-surface: #f8fafc;
-  --bg-surface-subtle: #edf2f7;
-  --bg-surface-hover: #e2e8f0;
-  --bg-elevated: #ffffff;
+  --bg-app: #EEF2F3;            /* Soft cool neutral / muted blue-grey */
+  --bg-primary: #FFFFFF;        /* Crisp card surface */
+  --bg-surface: #F4F7F6;        /* Subtle section surface neutral */
+  --bg-surface-subtle: #E5ECEF; /* Deeper subtle surface */
+  --bg-surface-hover: #DCE4E8;  /* Hover state surface */
+  --bg-elevated: #FFFFFF;
   
-  --border-subtle: #cbd5e1;
-  --border-medium: #94a3b8;
-  --border-focus: #1e40af;
+  --border-subtle: #C8D1D6;     /* Crisp institutional grey-blue */
+  --border-medium: #A4B4BE;     /* Crisp boundary border */
+  --border-focus: #1F4B5B;      /* Focused institutional border */
   
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  --text-inverse: #ffffff;
+  --text-primary: #1F2933;      /* Deep charcoal */
+  --text-secondary: #52606D;    /* Muted slate */
+  --text-muted: #7B8794;        /* Subdued slate */
+  --text-inverse: #FFFFFF;
   
-  /* Professional Institutional Palette */
-  --brand-blue: #1e3a8a;
-  --brand-blue-hover: #172554;
-  --brand-blue-surface: rgba(30, 58, 138, 0.08);
-  --brand-blue-border: rgba(30, 58, 138, 0.28);
+  /* Primary Institutional Palette: Deep Navy-Teal & Restrained Ochre */
+  --brand-blue: #1F4B5B;        /* Deep muted blue-green / navy-teal */
+  --brand-blue-hover: #163B48;
+  --brand-blue-surface: rgba(31, 75, 91, 0.08);
+  --brand-blue-border: rgba(31, 75, 91, 0.28);
   
-  --gov-navy: #0f2942;
-  --gov-saffron: #d97706;
-  --gov-saffron-surface: rgba(217, 119, 6, 0.08);
-  --gov-green: #15803d;
+  --gov-navy: #162838;          /* Institutional utility bar navy */
+  --gov-saffron: #B8752C;       /* Restrained warm ochre / amber */
+  --gov-saffron-surface: rgba(184, 117, 44, 0.10);
+  --gov-saffron-border: rgba(184, 117, 44, 0.35);
+  --gov-green: #1B7A43;         /* Institutional forest green */
   
-  --status-success: #15803d;
-  --status-success-surface: #f0fdf4;
-  --status-success-border: #86efac;
-  --status-success-text: #14532d;
+  /* Status Colors */
+  --status-success: #1B7A43;
+  --status-success-surface: #EEF7F2;
+  --status-success-border: #A4DCBA;
+  --status-success-text: #0F542C;
   
-  --status-warning: #b45309;
-  --status-warning-surface: #fffbeb;
-  --status-warning-border: #fcd34d;
-  --status-warning-text: #78350f;
+  --status-warning: #B8752C;
+  --status-warning-surface: #FCF6EE;
+  --status-warning-border: #F4D3A1;
+  --status-warning-text: #7C4410;
   
-  --status-critical: #b91c1c;
-  --status-critical-surface: #fef2f2;
-  --status-critical-border: #fca5a5;
-  --status-critical-text: #7f1d1d;
+  --status-critical: #B32624;
+  --status-critical-surface: #FDF2F2;
+  --status-critical-border: #F6B7B6;
+  --status-critical-text: #7A1614;
   
-  --status-neutral: #475569;
-  --status-neutral-surface: #f8fafc;
-  --status-neutral-border: #cbd5e1;
-  --status-neutral-text: #334155;
+  --status-neutral: #52606D;
+  --status-neutral-surface: #F0F4F6;
+  --status-neutral-border: #C8D1D6;
+  --status-neutral-text: #3E4C59;
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 4px 6px -1px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  /* Crisp, Subtle Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 2px 4px 0 rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 6px 16px 0 rgba(15, 23, 42, 0.08);
 
-  --card-bg: #ffffff;
-  --card-border: #cbd5e1;
+  --card-bg: #FFFFFF;
+  --card-border: #C8D1D6;
 }
 
 /* =========================================================
-   ALTERNATE: DARK INSTITUTIONAL THEME
+   ALTERNATE: CALM INSTITUTIONAL DARK THEME
    ========================================================= */
 [data-theme="dark"] {
-  --bg-app: #0b1120;
-  --bg-primary: #0f172a;
-  --bg-surface: #1e293b;
-  --bg-surface-subtle: #243248;
-  --bg-surface-hover: #2e3e58;
-  --bg-elevated: #1e293b;
+  --bg-app: #111822;            /* Deep charcoal/slate (never pure black) */
+  --bg-primary: #18222E;        /* Muted navy/slate card background */
+  --bg-surface: #1F2B3A;        /* Section surface */
+  --bg-surface-subtle: #263546; /* Deeper subtle surface */
+  --bg-surface-hover: #2E3E52;
+  --bg-elevated: #223040;
   
-  --border-subtle: rgba(255, 255, 255, 0.12);
-  --border-medium: rgba(255, 255, 255, 0.22);
-  --border-focus: #60a5fa;
+  --border-subtle: rgba(120, 145, 160, 0.35);
+  --border-medium: rgba(140, 165, 180, 0.50);
+  --border-focus: #5EA1B3;
   
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
-  --text-inverse: #0f172a;
+  --text-primary: #E8EDF2;      /* Off-white readable text */
+  --text-secondary: #B2C0CC;    /* Muted readable slate */
+  --text-muted: #7E90A0;
+  --text-inverse: #111822;
   
-  --brand-blue: #3b82f6;
-  --brand-blue-hover: #2563eb;
-  --brand-blue-surface: rgba(59, 130, 246, 0.12);
-  --brand-blue-border: rgba(59, 130, 246, 0.35);
+  --brand-blue: #4A8C9E;        /* Institutional slate-teal / navy-teal */
+  --brand-blue-hover: #5EA1B3;
+  --brand-blue-surface: rgba(74, 140, 158, 0.15);
+  --brand-blue-border: rgba(74, 140, 158, 0.40);
   
-  --gov-navy: #1e3a8a;
-  --gov-saffron: #f59e0b;
-  --gov-saffron-surface: rgba(245, 158, 11, 0.12);
-  --gov-green: #22c55e;
+  --gov-navy: #162230;
+  --gov-saffron: #D69047;       /* Muted ochre accent */
+  --gov-saffron-surface: rgba(214, 144, 71, 0.15);
+  --gov-saffron-border: rgba(214, 144, 71, 0.40);
+  --gov-green: #2EB868;
   
-  --status-success: #22c55e;
-  --status-success-surface: rgba(34, 197, 94, 0.12);
-  --status-success-border: rgba(34, 197, 94, 0.35);
-  --status-success-text: #4ade80;
+  --status-success: #2EB868;
+  --status-success-surface: rgba(46, 184, 104, 0.14);
+  --status-success-border: rgba(46, 184, 104, 0.38);
+  --status-success-text: #58D68D;
   
-  --status-warning: #f59e0b;
-  --status-warning-surface: rgba(245, 158, 11, 0.12);
-  --status-warning-border: rgba(245, 158, 11, 0.35);
-  --status-warning-text: #fbbf24;
+  --status-warning: #D69047;
+  --status-warning-surface: rgba(214, 144, 71, 0.14);
+  --status-warning-border: rgba(214, 144, 71, 0.38);
+  --status-warning-text: #F5B041;
   
-  --status-critical: #ef4444;
-  --status-critical-surface: rgba(239, 68, 68, 0.12);
-  --status-critical-border: rgba(239, 68, 68, 0.35);
-  --status-critical-text: #f87171;
+  --status-critical: #E05351;
+  --status-critical-surface: rgba(224, 83, 81, 0.14);
+  --status-critical-border: rgba(224, 83, 81, 0.38);
+  --status-critical-text: #F1948A;
   
-  --status-neutral: #94a3b8;
-  --status-neutral-surface: rgba(148, 163, 184, 0.12);
-  --status-neutral-border: rgba(148, 163, 184, 0.25);
-  --status-neutral-text: #e2e8f0;
+  --status-neutral: #9AA9B8;
+  --status-neutral-surface: rgba(154, 169, 184, 0.14);
+  --status-neutral-border: rgba(120, 145, 160, 0.35);
+  --status-neutral-text: #D5DEE5;
 
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.20);
+  --shadow-md: 0 3px 8px 0 rgba(0, 0, 0, 0.28);
+  --shadow-lg: 0 8px 20px 0 rgba(0, 0, 0, 0.35);
 
   --card-bg: var(--bg-primary);
   --card-border: var(--border-subtle);
@@ -138,6 +142,7 @@
 
 html {
   font-size: 16px;
+  scroll-behavior: smooth;
 }
 
 body {
@@ -148,19 +153,18 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.15s ease, color 0.15s ease;
+  overflow-x: hidden;
 }
 
 /* =========================================================
-   SCROLLBAR TREATMENT (Completely Invisible, Preserves Scrolling)
+   SCROLLBAR TREATMENT (Clean & Unobtrusive)
    ========================================================= */
-/* Hide scrollbar for Chrome, Safari, Edge, and Opera */
 ::-webkit-scrollbar {
   display: none;
   width: 0;
   height: 0;
 }
 
-/* Hide scrollbar for IE, Edge and Firefox */
 html,
 body,
 * {
@@ -191,10 +195,10 @@ a {
 
 .gov-topbar-utility {
   width: 100%;
-  background: #0f2942;
+  background: var(--gov-navy);
   color: #f1f5f9;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0.42rem clamp(1.25rem, 3.5vw, 3.5rem);
+  padding: 0.42rem clamp(1rem, 3vw, 2.75rem);
   font-size: 0.86rem;
   display: flex;
   justify-content: space-between;
@@ -215,21 +219,22 @@ a {
 
 .gov-header-inner {
   width: 100%;
-  padding: 0.65rem clamp(1.25rem, 3.5vw, 3.5rem);
+  padding: 0.65rem clamp(1rem, 3vw, 2.75rem);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .gov-brand-title {
-  font-size: 1.28rem;
+  font-size: clamp(1.15rem, 1.6vw, 1.32rem);
   font-weight: 800;
   color: var(--text-primary);
   letter-spacing: -0.015em;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  line-height: 1.25;
 }
 
 .gov-brand-subtitle {
@@ -274,18 +279,141 @@ a {
 }
 
 /* =========================================================
+   RESPONSIVE VISIBILITY UTILITIES
+   ========================================================= */
+.gov-desktop-only {
+  display: flex !important;
+}
+
+.gov-tablet-mobile-only {
+  display: none !important;
+}
+
+@media (max-width: 1023px) {
+  .gov-desktop-only {
+    display: none !important;
+  }
+  .gov-tablet-mobile-only {
+    display: flex !important;
+  }
+}
+
+/* =========================================================
    MAIN APPLICATION CONTENT WRAPPER
    ========================================================= */
 .app-container {
   width: 100%;
   max-width: 1720px;
   margin: 0 auto;
-  padding: 0.75rem clamp(1.25rem, 3.5vw, 3.5rem) 2.5rem;
+  padding: 0.75rem clamp(1rem, 3vw, 2.75rem) 2.5rem;
 }
 
 @media (max-width: 768px) {
   .app-container {
     padding: 0.75rem 0.85rem 1.5rem;
+  }
+}
+
+/* =========================================================
+   DESKTOP TWO-VIEWPORT HERO & RESPONSIVE WORKFLOWS
+   ========================================================= */
+.gov-landing-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Viewport 1: Desktop Two-Viewport Container */
+@media (min-width: 1024px) {
+  .gov-hero-viewport {
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  .gov-hero-container {
+    position: relative;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    height: calc(100vh - var(--app-header-height, 94px) - 2rem);
+    min-height: 480px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .gov-viewport-2 {
+    scroll-margin-top: calc(var(--app-header-height, 94px) + 0.75rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1.35rem;
+  }
+}
+
+/* Tablet & Mobile: Natural Vertical Flow */
+@media (max-width: 1023px) {
+  .gov-hero-viewport {
+    width: 100%;
+  }
+
+  .gov-hero-container {
+    position: relative;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    height: auto;
+    min-height: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .gov-viewport-2 {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+}
+
+/* Quick Access Grid */
+.gov-quick-access-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 1023px) {
+  .gov-quick-access-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .gov-quick-access-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Compliance Review Process 4-Step Workflow Grid */
+.gov-workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 1023px) {
+  .gov-workflow-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .gov-workflow-grid {
+    grid-template-columns: 1fr;
+    gap: 0.95rem;
   }
 }
 
