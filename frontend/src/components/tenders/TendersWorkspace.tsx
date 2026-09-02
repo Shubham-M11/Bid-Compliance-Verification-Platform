@@ -229,45 +229,45 @@ export default function TendersWorkspace({
         {/* Right Column: Selected Tender Details */}
         <div>
           {selectedTender ? (
-            <div className="ent-card" style={{ borderTop: "3px solid var(--brand-blue)" }}>
-              <div style={{ paddingBottom: "1rem", borderBottom: "1px solid var(--border-subtle)", marginBottom: "1.25rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.35rem" }}>
+            <div className="ent-card" style={{ borderTop: "3px solid var(--brand-blue)", padding: "1.25rem 1.4rem" }}>
+              <div style={{ paddingBottom: "1.1rem", borderBottom: "1px solid var(--border-subtle)", marginBottom: "1.25rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.65rem" }}>
                   <span className="ent-badge ent-badge-neutral">
                     {selectedTender.category}
                   </span>
-                  <span style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>
+                  <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
                     Estimated Value: <strong style={{ color: "var(--text-primary)" }}>{selectedTender.estimatedValue}</strong>
                   </span>
                 </div>
 
-                <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.25rem" }}>
+                <h3 style={{ fontSize: "1.08rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.45rem" }}>
                   {selectedTender.reference}
                 </h3>
-                <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.45 }}>
+                <p style={{ fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>
                   {selectedTender.title}
                 </p>
               </div>
 
               {/* Tender Statutory Evaluation Requirements */}
-              <div style={{ marginBottom: "1.5rem" }}>
-                <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.65rem" }}>
+              <div style={{ marginBottom: "1.4rem" }}>
+                <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.75rem" }}>
                   Statutory Evaluation Checklist
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <CheckCircle2 size={14} color="var(--status-success-text)" />
-                    <span>Active GSTIN Registration (State Match & Mod-36 Checksum)</span>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", fontSize: "0.84rem", color: "var(--text-secondary)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+                    <CheckCircle2 size={15} color="var(--status-success-text)" style={{ flexShrink: 0 }} />
+                    <span>Active GSTIN Registration (State Match &amp; Mod-36 Checksum)</span>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <CheckCircle2 size={14} color="var(--status-success-text)" />
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+                    <CheckCircle2 size={15} color="var(--status-success-text)" style={{ flexShrink: 0 }} />
                     <span>Matching PAN Entity Linkage (4th char format check)</span>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <CheckCircle2 size={14} color="var(--status-success-text)" />
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+                    <CheckCircle2 size={15} color="var(--status-success-text)" style={{ flexShrink: 0 }} />
                     <span>OEM Manufacturer Authorization Form (MAF) Validity Verification</span>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <CheckCircle2 size={14} color="var(--brand-blue)" />
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+                    <CheckCircle2 size={15} color="var(--brand-blue)" style={{ flexShrink: 0 }} />
                     <span>MSME Udyam Advisory EMD Exemption Eligibility Check</span>
                   </div>
                 </div>
@@ -276,7 +276,7 @@ export default function TendersWorkspace({
               {/* Action: Evaluate Bid */}
               <div
                 style={{
-                  paddingTop: "1.25rem",
+                  paddingTop: "1.15rem",
                   borderTop: "1px solid var(--border-subtle)",
                   display: "flex",
                   justifyContent: "flex-end",

@@ -50,29 +50,29 @@ export default function AppNavbar({
 
       {/* 2. Top Institutional Utility Bar */}
       <div className="gov-topbar-utility">
-        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexShrink: 0 }}>
           <span style={{ fontWeight: 700, letterSpacing: "0.01em", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <Scale size={14} color="#f59e0b" />
-            GeM Bid Compliance Verification
+            <Scale size={14} color="var(--gov-saffron)" />
+            <span>GeM Bid Compliance Verification</span>
           </span>
-          <span style={{ opacity: 0.4 }}>|</span>
-          <span style={{ opacity: 0.85 }}>Procurement Compliance & Decision Support</span>
+          <span className="gov-desktop-only" style={{ opacity: 0.4 }}>|</span>
+          <span className="gov-desktop-only" style={{ opacity: 0.85 }}>Procurement Compliance &amp; Decision Support</span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
           {/* Accessibility Font Resizer */}
-          <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", background: "rgba(255, 255, 255, 0.1)", padding: "1px 6px", borderRadius: "3px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.2rem", background: "rgba(255, 255, 255, 0.1)", padding: "1px 6px", borderRadius: "3px" }}>
             <button
               type="button"
               onClick={() => handleFontSize("normal")}
               style={{
                 background: "transparent",
                 border: "none",
-                color: fontSizeLevel === "normal" ? "#f59e0b" : "#cbd5e1",
+                color: fontSizeLevel === "normal" ? "#fcd34d" : "#cbd5e1",
                 cursor: "pointer",
                 fontWeight: 700,
                 fontSize: "0.72rem",
-                padding: "1px 4px",
+                padding: "2px 4px",
               }}
               title="Standard Font Size"
             >
@@ -84,11 +84,11 @@ export default function AppNavbar({
               style={{
                 background: "transparent",
                 border: "none",
-                color: fontSizeLevel === "large" ? "#f59e0b" : "#cbd5e1",
+                color: fontSizeLevel === "large" ? "#fcd34d" : "#cbd5e1",
                 cursor: "pointer",
                 fontWeight: 700,
                 fontSize: "0.78rem",
-                padding: "1px 4px",
+                padding: "2px 4px",
               }}
               title="Large Font Size"
             >
@@ -100,11 +100,11 @@ export default function AppNavbar({
               style={{
                 background: "transparent",
                 border: "none",
-                color: fontSizeLevel === "larger" ? "#f59e0b" : "#cbd5e1",
+                color: fontSizeLevel === "larger" ? "#fcd34d" : "#cbd5e1",
                 cursor: "pointer",
                 fontWeight: 700,
                 fontSize: "0.85rem",
-                padding: "1px 4px",
+                padding: "2px 4px",
               }}
               title="Largest Font Size"
             >
@@ -128,11 +128,11 @@ export default function AppNavbar({
             }}
             title="View system status and verification components"
           >
-            <Activity size={13} color="#22c55e" />
-            <span>System Status</span>
+            <Activity size={13} color="var(--status-success)" />
+            <span className="gov-desktop-only">System Status</span>
           </button>
 
-          {/* Theme Toggle (Light Default) */}
+          {/* Theme Toggle (Institutional Light / Dark) */}
           <ThemeToggle />
 
           {/* Officer Indicator */}
@@ -158,11 +158,11 @@ export default function AppNavbar({
       <div className="gov-main-header">
         <div className="gov-header-inner">
           {/* Brand Identification */}
-          <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
             <div
               style={{
-                width: "40px",
-                height: "40px",
+                width: "38px",
+                height: "38px",
                 borderRadius: "var(--radius-sm)",
                 background: "var(--brand-blue)",
                 color: "#ffffff",
@@ -170,24 +170,24 @@ export default function AppNavbar({
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0,
-                boxShadow: "0 2px 6px rgba(30, 58, 138, 0.25)",
+                boxShadow: "0 2px 6px rgba(31, 75, 91, 0.25)",
               }}
             >
-              <ShieldCheck size={24} />
+              <ShieldCheck size={22} />
             </div>
 
-            <div>
+            <div style={{ minWidth: 0 }}>
               <h1 className="gov-brand-title">
                 GeM Bid Compliance Verification
               </h1>
               <p className="gov-brand-subtitle">
-                Procurement Compliance & Decision Support
+                Procurement Compliance &amp; Decision Support
               </p>
             </div>
           </div>
 
-          {/* Desktop Navigation Links */}
-          <nav className="gov-nav-bar" aria-label="Portal Workspaces" style={{ display: "flex" }}>
+          {/* Desktop Navigation Links (Visible on desktop >= 1024px) */}
+          <nav className="gov-nav-bar gov-desktop-only" aria-label="Portal Workspaces">
             <button
               type="button"
               className={`gov-nav-item ${activeTab === "reviews" ? "gov-nav-item-active" : ""}`}
@@ -225,8 +225,8 @@ export default function AppNavbar({
             </button>
           </nav>
 
-          {/* Secondary Actions on Right */}
-          <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+          {/* Actions on Right */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
             <button
               type="button"
               className="ent-btn ent-btn-secondary ent-btn-sm"
@@ -235,34 +235,42 @@ export default function AppNavbar({
               style={{ fontSize: "0.82rem" }}
             >
               <Sparkles size={14} color="var(--brand-blue)" />
-              <span>Demo / Evaluation</span>
+              <span className="gov-desktop-only">Demo / Evaluation</span>
+              <span className="gov-tablet-mobile-only">Demo</span>
             </button>
 
-            {/* Mobile Hamburger Toggle */}
+            {/* Mobile Hamburger Toggle (Visible on tablet/mobile < 1024px) */}
             <button
               type="button"
-              className="ent-btn ent-btn-ghost ent-btn-sm"
+              className="ent-btn ent-btn-ghost ent-btn-sm gov-tablet-mobile-only"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              style={{ display: "none" }}
               aria-label="Toggle Navigation Menu"
+              style={{ padding: "0.4rem 0.5rem" }}
             >
-              {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Dropdown Menu */}
+        {/* Mobile / Tablet Collapsible Menu */}
         {mobileMenuOpen && (
           <div
+            className="gov-tablet-mobile-only"
             style={{
-              padding: "0.85rem 1.5rem",
+              padding: "0.85rem 1.25rem 1.15rem",
               background: "var(--bg-surface)",
               borderTop: "1px solid var(--border-subtle)",
               display: "flex",
               flexDirection: "column",
-              gap: "0.5rem",
+              gap: "0.45rem",
+              width: "100%",
+              boxShadow: "var(--shadow-md)",
             }}
           >
+            <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>
+              Workspaces &amp; Navigation
+            </div>
+
             <button
               type="button"
               className={`gov-nav-item ${activeTab === "reviews" ? "gov-nav-item-active" : ""}`}
@@ -270,9 +278,10 @@ export default function AppNavbar({
                 onSelectTab("reviews");
                 setMobileMenuOpen(false);
               }}
+              style={{ width: "100%", justifyContent: "flex-start" }}
             >
-              <ShieldCheck size={16} />
-              <span>Reviews</span>
+              <ShieldCheck size={17} />
+              <span>Reviews Workspace</span>
             </button>
 
             <button
@@ -282,9 +291,10 @@ export default function AppNavbar({
                 onSelectTab("tenders");
                 setMobileMenuOpen(false);
               }}
+              style={{ width: "100%", justifyContent: "flex-start" }}
             >
-              <FileCheck2 size={16} />
-              <span>Tenders</span>
+              <FileCheck2 size={17} />
+              <span>Tenders Catalog</span>
             </button>
 
             <button
@@ -294,9 +304,10 @@ export default function AppNavbar({
                 onSelectTab("documents");
                 setMobileMenuOpen(false);
               }}
+              style={{ width: "100%", justifyContent: "flex-start" }}
             >
-              <FileText size={16} />
-              <span>Documents</span>
+              <FileText size={17} />
+              <span>Documents Repository</span>
             </button>
 
             <button
@@ -306,10 +317,41 @@ export default function AppNavbar({
                 onSelectTab("audit");
                 setMobileMenuOpen(false);
               }}
+              style={{ width: "100%", justifyContent: "flex-start" }}
             >
-              <History size={16} />
+              <History size={17} />
               <span>Audit History</span>
             </button>
+
+            <div style={{ height: "1px", background: "var(--border-subtle)", margin: "0.5rem 0" }} />
+
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="ent-btn ent-btn-secondary ent-btn-sm"
+                onClick={() => {
+                  onOpenDemoModal();
+                  setMobileMenuOpen(false);
+                }}
+                style={{ flex: 1, justifyContent: "center" }}
+              >
+                <Sparkles size={14} color="var(--brand-blue)" />
+                <span>Evaluation Scenarios</span>
+              </button>
+
+              <button
+                type="button"
+                className="ent-btn ent-btn-ghost ent-btn-sm"
+                onClick={() => {
+                  onOpenDiagnosticsModal();
+                  setMobileMenuOpen(false);
+                }}
+                style={{ justifyContent: "center" }}
+              >
+                <Activity size={14} color="var(--status-success)" />
+                <span>System Status</span>
+              </button>
+            </div>
           </div>
         )}
       </div>

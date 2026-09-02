@@ -257,34 +257,34 @@ export default function DocumentsWorkspace() {
 
           {uploadedResult ? (
             /* Uploaded Document Inspector */
-            <div className="ent-card">
+            <div className="ent-card" style={{ padding: "1.25rem 1.4rem" }}>
               <div
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "flex-start",
-                  paddingBottom: "1rem",
+                  paddingBottom: "1.1rem",
                   borderBottom: "1px solid var(--border-subtle)",
                   marginBottom: "1.25rem",
                 }}
               >
                 <div>
-                  <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                  <h3 style={{ fontSize: "1.08rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
                     {uploadedResult.filename}
                   </h3>
-                  <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: "2px" }}>
+                  <p style={{ fontSize: "0.84rem", color: "var(--text-secondary)", lineHeight: 1.45 }}>
                     {formatFileSize(uploadedResult.file_size)} · {uploadedResult.page_count} Total Pages
                   </p>
                 </div>
 
-                <span className="ent-badge ent-badge-success">
+                <span className="ent-badge ent-badge-success" style={{ marginTop: "2px" }}>
                   <CheckCircle2 size={12} /> Processed
                 </span>
               </div>
 
               {/* Page Navigator */}
               <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "1rem" }}>
-                <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginRight: "0.3rem" }}>
+                <span style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginRight: "0.3rem" }}>
                   Pages:
                 </span>
                 {uploadedResult.pages.map((p) => (
@@ -310,7 +310,7 @@ export default function DocumentsWorkspace() {
                     marginBottom: "0.5rem",
                   }}
                 >
-                  <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                  <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
                     Page {selectedPage} Text Content ({currentPageEvidence?.character_count || 0} chars)
                   </span>
                   <button
@@ -329,27 +329,27 @@ export default function DocumentsWorkspace() {
             </div>
           ) : selectedDoc ? (
             /* Selected Document Preview Card */
-            <div className="ent-card">
+            <div className="ent-card" style={{ padding: "1.25rem 1.4rem" }}>
               <div
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "flex-start",
-                  paddingBottom: "1rem",
+                  paddingBottom: "1.1rem",
                   borderBottom: "1px solid var(--border-subtle)",
                   marginBottom: "1.25rem",
                 }}
               >
                 <div>
-                  <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                  <h3 style={{ fontSize: "1.08rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.45rem" }}>
                     {selectedDoc.name}
                   </h3>
-                  <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: "2px" }}>
-                    Filename: <strong>{selectedDoc.filename}</strong> · {selectedDoc.pages} Pages · Uploaded {selectedDoc.uploadedAt}
+                  <p style={{ fontSize: "0.84rem", color: "var(--text-secondary)", lineHeight: 1.45 }}>
+                    Filename: <strong style={{ color: "var(--text-primary)" }}>{selectedDoc.filename}</strong> · {selectedDoc.pages} Pages · Uploaded {selectedDoc.uploadedAt}
                   </p>
                 </div>
 
-                <span className="ent-badge ent-badge-neutral">
+                <span className="ent-badge ent-badge-neutral" style={{ marginTop: "2px" }}>
                   {selectedDoc.category.toUpperCase()}
                 </span>
               </div>
