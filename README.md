@@ -103,7 +103,7 @@ Cross-references extracted entities across heterogeneous document pages:
 ## 📁 Repository Directory Structure
 
 ```
-Bid-Compilance-Verification-Platform/
+Bid-Compliance-Verification-Platform/
 ├── backend/
 │   ├── app/
 │   │   ├── api/v1/                   # Versioned REST API endpoints
@@ -224,8 +224,8 @@ The platform includes **8 pre-configured sample bid datasets** and simulation sc
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/Shubham-M11/Bid-Compilance-Verification-Platform.git
-cd Bid-Compilance-Verification-Platform
+git clone https://github.com/Shubham-M11/Bid-Compliance-Verification-Platform.git
+cd Bid-Compliance-Verification-Platform
 ```
 
 ### 2. Backend Setup (FastAPI)
@@ -334,7 +334,7 @@ The frontend is built with a **Calm Institutional Design System** tailored for I
 
 Developed for the **Smart India Hackathon (SIH) 2026** under Problem Statement **SIH26100**.
 
-- **Repository**: [https://github.com/Shubham-M11/Bid-Compilance-Verification-Platform](https://github.com/Shubham-M11/Bid-Compilance-Verification-Platform)
+- **Repository**: [https://github.com/Shubham-M11/Bid-Compliance-Verification-Platform](https://github.com/Shubham-M11/Bid-Compliance-Verification-Platform)
 
 ---
 
