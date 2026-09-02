@@ -67,7 +67,7 @@ export interface ApiError {
 }
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_URL || "https://bid-compliance-verification-platform.onrender.com";
 
 /**
  * Format network / connection errors into helpful actionable messages
@@ -82,7 +82,7 @@ function formatNetworkError(error: unknown, defaultMessage: string): string {
       msg.includes("load failed") ||
       msg.includes("aborted")
     ) {
-      return "Backend service unavailable. Please ensure the backend server is running at http://localhost:8000.";
+      return `Backend service unavailable (${API_BASE_URL}). If using Render free tier, please allow 30-50s for server cold start.`;
     }
     return error.message;
   }
@@ -103,7 +103,7 @@ export async function getHealthStatus(): Promise<HealthResponse> {
         Accept: "application/json",
       },
       cache: "no-store",
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(25000),
     });
 
     if (!res.ok) {
